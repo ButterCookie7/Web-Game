@@ -16,11 +16,14 @@
   <canvas id="nemopan" width="500" height="500">
   </canvas>
   <script src="./js/jquery-3.3.1.min.js"></script>
-  <script src="./js/vector2d.js"></script>
   <!--  
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   -->
   <script type="text/javascript">
+  	function Point(x, y){
+		this.x = x;
+		this.y = y;
+  	}
     function Tile(x, y, w, h){
 		this.x = x;
 		this.y = y;
@@ -53,20 +56,20 @@
 	}
 
 	function drawX(ctx, width, color, tile) {
-		var toplft = new Vector2d(tile.x + 0.2*tile.width, tile.y + 0.2*tile.height);
-		var toprgt = new Vector2d(tile.x + 0.8*tile.width, tile.y + 0.2*tile.height);
-		var botlft = new Vector2d(tile.x + 0.2*tile.width, tile.y + 0.8*tile.height);
-		var botrgt = new Vector2d(tile.x + 0.8*tile.width, tile.y + 0.8*tile.height);
+		var toplft = new Point(tile.x + 0.2*tile.width, tile.y + 0.2*tile.height);
+		var toprgt = new Point(tile.x + 0.8*tile.width, tile.y + 0.2*tile.height);
+		var botlft = new Point(tile.x + 0.2*tile.width, tile.y + 0.8*tile.height);
+		var botrgt = new Point(tile.x + 0.8*tile.width, tile.y + 0.8*tile.height);
 		drawLine(ctx, width, color, toplft, botrgt);
 		drawLine(ctx, width, color, toprgt, botlft);
 	}
 	function drawO(ctx, width, color, tile) {
-		var cen = new Vector2d(tile.x + 0.5*tile.width, tile.y + 0.5*tile.height);
+		var cen = new Point(tile.x + 0.5*tile.width, tile.y + 0.5*tile.height);
 		var rad = Math.min(tile.width, tile.height)*0.35;
 		drawCircle(ctx, width, color, cen, rad);
 	}
 	function drawO(ctx, color, tile) {
-		var cen = new Vector2d(tile.x + 0.5*tile.width, tile.y + 0.5*tile.height);
+		var cen = new Point(tile.x + 0.5*tile.width, tile.y + 0.5*tile.height);
 		var rad = Math.min(tile.width, tile.height)*0.35;
 		drawCircle(ctx, color, cen, rad);
 	}
@@ -92,8 +95,8 @@
 		}
 		
 		for (var i=0; i<8; ++i) {
-			drawLine(context, 2, "lightyellow", new Vector2d(wdiv8*i, 0), new Vector2d(wdiv8*i, hdiv8*8));
-			drawLine(context, 2, "lightyellow", new Vector2d(0, hdiv8*i), new Vector2d(wdiv8*8, hdiv8*i));
+			drawLine(context, 2, "lightyellow", new Point(wdiv8*i, 0), new Point(wdiv8*i, hdiv8*8));
+			drawLine(context, 2, "lightyellow", new Point(0, hdiv8*i), new Point(wdiv8*8, hdiv8*i));
 		}
 		for (var i=0; i<8; ++i) {
 			for ( var j=0; j<8; ++j) {

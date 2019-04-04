@@ -2,19 +2,20 @@
 <html>
 <head>
   <meta charset=utf-8>
-  <title>Draw X</title>
+  <title>Tic Tac Toe</title>
   <style type="text/css">
     #nemopan {
-      background-color: #EEFFFF;
-      position: absolute;
-      left: 100px;
-      top: 100px;      
+	  background-color: #EEFFFF;
+	  position: absolute;
+	  left: 100px;
+	  top: 100px;
     }
   </style>
 </head>
 <body>
   <canvas id="nemopan" width="400" height="400">
   </canvas>
+  <div id="coord"></div>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript">
   	function Point(x, y){
@@ -26,6 +27,11 @@
 		this.y = y;
 		this.width = w;
 		this.height = h;
+		this.contains = function(p1) {
+			return this.x < p1.x && p1.x < this.x+this.width
+			&& this.y < p1.y && p1.y < this.y+this.height;
+		}
+
     }
 	function drawLine(ctx, width, color, from, to) {
 		ctx.lineWidth = width;
@@ -44,6 +50,11 @@
 		ctx.closePath(); 
 		ctx.stroke();					
 	}
+	function drawRect(ctx, color, tile){
+		ctx.fillStyle = color;
+		ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
+		ctx.fill();
+	}
 	function drawX(ctx, width, color, tile) {
 		var toplft = new Point(tile.x + 0.2*tile.width, tile.y + 0.2*tile.height);
 		var toprgt = new Point(tile.x + 0.8*tile.width, tile.y + 0.2*tile.height);
@@ -57,19 +68,88 @@
 		var rad = Math.min(tile.width, tile.height)*0.35;
 		drawCircle(ctx, width, color, cen, rad);
 	}
-
+	function findMousePointTile(p1) {
+		for (var i=0; i<tiles.length; ++i) {
+			if (tiles[i].contains(p1)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	function doMouseMove(mouseEvent) {
+		var obj = $("#nemopan")[0];
+	  	var objleft = 0;
+	  	var objtop = 0;
+	  	var xpos;
+	  	var ypos;
+	  	while (obj.offsetParent) {
+	    	objleft += obj.offsetLeft;
+	    	objtop += obj.offsetTop;
+	    	obj = obj.offsetParent;
+	  	}
+	 	xpos = mouseEvent.pageX - objleft;
+	  	ypos = mouseEvent.pageY - objtop;
+	  	//console.log(xpos + ", " + ypos);
+	  	$("#coord").text(xpos + ", " + ypos);
+	  	drawRect(context, "cyan", tiles[findMousePointTile(new Point(xpos, ypos))]);
+	}
+	function doMouseClick(mouseEvent) {
+		var obj = $("#nemopan")[0];
+	  	var objleft = 0;
+	  	var objtop = 0;
+	  	var xpos;
+	  	var ypos;
+	  	while (obj.offsetParent) {
+	    	objleft += obj.offsetLeft;
+	    	objtop += obj.offsetTop;
+	    	obj = obj.offsetParent;
+	  	}
+	 	xpos = mouseEvent.pageX - objleft;
+	  	ypos = mouseEvent.pageY - objtop;
+	  	//console.log(xpos + ", " + ypos);
+	  	$("#coord").text(xpos + ", " + ypos);
+	  	var pos = findMousePointTile(new Point(xpos, ypos))
+	  	if (tileStatus[pos]==0) {
+	  		stage++;
+	  		if (stage%2 == 0) {
+	  			tileStatus[pos] = 2;
+	  		}
+	  		else {
+	  			tileStatus[pos] = 1;
+	  		}
+	  		displayGamePan();
+	  	}
+	}
+	function displayGamePan() {
+		for (var i=0; i<tiles.length; ++i) {
+			if (tileStatus[i]==1) {
+				drawX(context, 7, "darkblue", tiles[i]);
+			}
+			else if (tileStatus[i]==2) {
+				drawO(context, 7, "darkred", tiles[i]);
+			}
+		}
+	}
+	var tiles;
+	var context;
+	var tileStatus = [
+			0,0,0,
+			0,0,0,
+			0,0,0];
+	var stage = 0;
+	
 	$(document).ready(function() {
 		
 		var canvas = $("#nemopan");
 		var canvasWidth = canvas.width();
 		var canvasHeight = canvas.height();
-		var context = canvas.get(0).getContext("2d");
+		context = canvas.get(0).getContext("2d");
 
 		var wdiv3 = canvasWidth / 3.0;
 		var hdiv3 = canvasHeight / 3.0;
 		var wdiv32 = wdiv3*2.0;
 		var hdiv32 = hdiv3*2.0;
-		var tiles = [ 
+		tiles = [ 
 				new Tile(0,0,wdiv3,hdiv3), new Tile(wdiv3,0,wdiv3,hdiv3), new Tile(wdiv32,0,wdiv3,hdiv3),
 				new Tile(0,hdiv3,wdiv3,hdiv3), new Tile(wdiv3,hdiv3,wdiv3,hdiv3), new Tile(wdiv32,hdiv3,wdiv3,hdiv3),
 				new Tile(0,hdiv32,wdiv3,hdiv3), new Tile(wdiv3,hdiv32,wdiv3,hdiv3), new Tile(wdiv32,hdiv32,wdiv3,hdiv3)
@@ -80,17 +160,11 @@
 			drawLine(context, 2, "LightBlue", new Point(0, hdiv3*i), new Point(wdiv3*3, hdiv3*i));
 		}
 
-		for (var i=0; i<tiles.length; ++i) {
-			if (i%2==0) {
-				drawX(context, 7, "darkblue", tiles[i]);
-			}
-			else {
-				drawO(context, 7, "darkred", tiles[i]);
-			}
-		}
+		//canvas[0].onmousemove = doMouseMove;
+		canvas[0].onmousedown = doMouseClick;
 
 		
 	});
   </script>
 </body>
-</html>  
+</html>

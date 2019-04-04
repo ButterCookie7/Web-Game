@@ -107,7 +107,7 @@
 	 	xpos = mouseEvent.pageX - objleft;
 	  	ypos = mouseEvent.pageY - objtop;
 	  	//console.log(xpos + ", " + ypos);
-	  	$("#coord").text(xpos + ", " + ypos);
+	  	//$("#coord").text(xpos + ", " + ypos);
 	  	var pos = findMousePointTile(new Point(xpos, ypos))
 	  	if (tileStatus[pos]==0) {
 	  		stage++;
@@ -119,6 +119,11 @@
 	  		}
 	  		displayGamePan();
 	  	}
+	}
+	function checkWinner() {
+		for (var i=0; i<winList.length; ++i) {
+			var seq3 = winList[i];
+		}
 	}
 	function displayGamePan() {
 		for (var i=0; i<tiles.length; ++i) {
@@ -138,6 +143,16 @@
 			0,0,0];
 	var stage = 0;
 	
+	var winList = [
+		[0,1,2],
+		[3,4,5],
+		[6,7,8],
+		[0,3,6],
+		[1,4,7],
+		[2,5,8],
+		[0,4,8],
+		[2,4,6]
+	];
 	$(document).ready(function() {
 		
 		var canvas = $("#nemopan");

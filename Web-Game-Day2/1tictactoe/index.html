@@ -10,12 +10,18 @@
 	  left: 100px;
 	  top: 100px;
     }
+    #winner {
+	  position: absolute;
+	  left: 100px;
+	  top: 500px;
+    }
   </style>
 </head>
 <body>
   <canvas id="nemopan" width="400" height="400">
   </canvas>
   <div id="coord"></div>
+  <div id="winner"></div>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript">
   	function Point(x, y){
@@ -120,10 +126,20 @@
 	  		displayGamePan();
 	  	}
 	}
+	function doNothing(mouseEvent) {
+		$("#winner").text("Game Finished -- Try new Game");
+	}
 	function checkWinner() {
 		for (var i=0; i<winList.length; ++i) {
 			var seq3 = winList[i];
+			var winner = tileStatus[seq3[0]];
+			if (winner != 0) {
+				if (winner == tileStatus[seq3[1]] && winner == tileStatus[seq3[2]]) {
+					return winner;
+				}
+			}
 		}
+		return 0; // no winner
 	}
 	function displayGamePan() {
 		for (var i=0; i<tiles.length; ++i) {
@@ -134,7 +150,14 @@
 				drawO(context, 7, "darkred", tiles[i]);
 			}
 		}
+		var winner = checkWinner();
+		if (winner!=0) {
+			var mark = ["", "X", "O"];
+			$("#winner").text("Winner is " + mark[winner]);
+			canvas[0].onmousedown = doNothing;
+		}
 	}
+	var canvas;
 	var tiles;
 	var context;
 	var tileStatus = [
@@ -155,10 +178,11 @@
 	];
 	$(document).ready(function() {
 		
-		var canvas = $("#nemopan");
+		canvas = $("#nemopan");
+		context = canvas.get(0).getContext("2d");
+		
 		var canvasWidth = canvas.width();
 		var canvasHeight = canvas.height();
-		context = canvas.get(0).getContext("2d");
 
 		var wdiv3 = canvasWidth / 3.0;
 		var hdiv3 = canvasHeight / 3.0;

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Draw Image</title>
+  <style type="text/css">
+    #nemopan {
+      background-color: #EEFFFF;
+      position: absolute;
+      left: 100px;
+      top: 100px;      
+    }
+  </style>
+   
+</head>
+<body>
+  <img id="LegoJPG" style="display:none;" src="lego800x600.png" alt="Lego Store">
+  <canvas id="nemopan" width="400" height="300">
+  </canvas>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript">
+  	function Point(x, y){
+		this.x = x;
+		this.y = y;
+  	}
+
+	$(document).ready(function() {
+		
+		var canvas = $("#nemopan");
+		var canvasWidth = canvas.width();
+		var canvasHeight = canvas.height();
+		var context = canvas.get(0).getContext("2d");
+
+		//var img = $("#LegoJPG")[0];
+		var img = new Image();
+		img.src = "lego800x600.png";
+		context.drawImage(img, 0, 0, 400, 300);
+	});
+  </script>
+</body>
+</html>  

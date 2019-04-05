@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Draw 52 Cards</title>
+  <style type="text/css">
+    #cardpan {
+      background-color: #006633;
+    }
+  </style>
+   
+</head>
+<body>
+  <canvas id="cardpan" width="800" height="600">
+  </canvas>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript">
+  	function Point(x, y){
+		this.x = x;
+		this.y = y;
+  	}
+    function Tile(x, y, w, h){
+		this.x = x;
+		this.y = y;
+		this.width = w;
+		this.height = h;
+		this.contains = function(p1) {
+			return this.x < p1.x && p1.x < this.x+this.width
+			&& this.y < p1.y && p1.y < this.y+this.height;
+		}
+    }
+	var CARD_WIDTH = 71;
+	var CARD_HEIGHT = 96;
+  	var cardImgFiles = [
+  		"img/c1", "img/c2", "img/c3", "img/c4", "img/c5", "img/c6", "img/c7", "img/c8", "img/c9", "img/c10", "img/cj", "img/cq", "img/ck",
+  		"img/d1", "img/d2", "img/d3", "img/d4", "img/d5", "img/d6", "img/d7", "img/d8", "img/d9", "img/d10", "img/dj", "img/dq", "img/dk",
+  		"img/s1", "img/s2", "img/s3", "img/s4", "img/s5", "img/s6", "img/s7", "img/s8", "img/s9", "img/s10", "img/sj", "img/sq", "img/sk",
+  		"img/h1", "img/h2", "img/h3", "img/h4", "img/h5", "img/h6", "img/h7", "img/h8", "img/h9", "img/h10", "img/hj", "img/hq", "img/hk"
+  	];
+  	var tile2d;
+  	var cardImages = new Array(52);
+  	var backImage = new Image();
+  	backImage.src = "img/b1fv.png"
+
+  	var cardStatus;
+  	function Card(s, r) {
+  		// suit = {"club"=0, "diamond"=1, "space"=2, "heart"=3};
+  		// rank = { "A"=1, 2,...,10, "J"=11, "Q"=12, "K"=13}
+  		this.suit = s;
+  		this.rank = r;
+  		this.getImage = function() {
+  			return cardImages[this.suit*13 + (this.rank-1)];
+  		} 
+  	}
+  	function buildCardImages() {
+  	  	var imgFiles = cardImgFiles.map(f=>f+".png");
+  	  	console.log(imgFiles);
+  	  	for (var i=0; i<imgFiles.length; ++i) {
+  	  		cardImages[i] = new Image();
+  	  		cardImages[i].src = imgFiles[i];
+  	  	}
+
+  	}
+  	function buildTiles() {
+  		tile2d = new Array(4);
+  		for (var i=0; i<4; ++i) {
+			tile2d[i] = new Array(13);
+  			for (var j=0; j<13; ++j) {
+  				tile2d[i][j] = new Tile(i*CARD_HEIGHT, j*CARD_WIDTH, CARD_WIDTH, CARD_HEIGHT);
+  			}
+  		}
+  	}
+	function drawImage(ctx, image, tile) {
+		ctx.drawImage(img, tile.x, tile.y, tile.width, tile.height);
+	}
+	function buildCardStatus() {
+		cardStatus = new Array(4);
+  		for (var i=0; i<4; ++i) {
+  			cardStatus[i] = new Array(13);
+  			for (var j=0; j<13; ++j) {
+  				cardStatus[i][j] = new Card(i, j+1);
+  			}
+  		}
+	}	
+	
+	$(document).ready(function() {
+		
+		var canvas = $("#cardpan");
+		var canvasWidth = canvas.width();
+		var canvasHeight = canvas.height();
+		var context = canvas.get(0).getContext("2d");
+
+		//var img = $("#LegoJPG")[0];
+		var img = new Image();
+		img.src = "img/b2fv.png";
+		context.drawImage(img, 0, 0);
+		img = new Image();
+		img.src = "img/b2fv.png";
+		context.drawImage(img, 80, 0);
+		
+		
+		buildCardImages();
+		buildTiles();
+		buildCardStatus();
+	  	var cardIma = new Image();
+  	  	cardIma.src = "img/b1fv.png";
+		context.drawImage(cardIma, 0, 100);
+  	  	console.log(cardIma.src);
+		for (var i=0; i<tile2d.lenght; ++i) {
+			for (var j=0; j<tile2d[i].length; ++i) {
+				drawImage(context, cardStatus[i][j].getImage(), tile[i][j])
+			}
+		}
+		
+	});
+  </script>
+</body>
+</html>  

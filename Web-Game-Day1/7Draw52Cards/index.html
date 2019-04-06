@@ -53,19 +53,25 @@
   		"img/h1", "img/h2", "img/h3", "img/h4", "img/h5", "img/h6", "img/h7", "img/h8", "img/h9", "img/h10", "img/hj", "img/hq", "img/hk"
   	];
   	cardImgFiles = cardImgFiles.map(f=>f+".png");
+  	
+  	var context;
   	var tile2d;
-
   	var cardStatus;
+  	
   	function Card(s, r) {
   		// suit = {"club"=0, "diamond"=1, "space"=2, "heart"=3};
   		// rank = { "A"=1, 2,...,10, "J"=11, "Q"=12, "K"=13}
   		this.suit = s;
   		this.rank = r;
+  		this.open = false;
   		this.getImageFile = function() {
   			//console.log(s, r, cardImgFiles[this.suit*13 + (this.rank-1)]);
-  			return cardImgFiles[this.suit*13 + (this.rank-1)];
-  		} 
-  	}
+  			if (this.open)
+  				return cardImgFiles[this.suit*13 + (this.rank-1)];
+  			else
+  				return "img/b1fv.png";
+  		}
+  	} 
   	function buildCardTiles() {
   		tile2d = new Array(4);
   		for (var i=0; i<4; ++i) {
@@ -84,13 +90,47 @@
   			}
   		}
 	}	
-	
+	function findMousePointTile(p1) {
+		for (var i=0; i<4; ++i) {
+			for (var j=0; j<13; ++j) {
+				if (tile2d[i][j].contains(p1)) {
+					return [i, j];
+				}
+			}
+		}
+		return null;
+	}
+	function doMouseClick(mouseEvent) {
+		var obj = $("#cardpan")[0];
+	  	var objleft = 0;
+	  	var objtop = 0;
+	  	var xpos;
+	  	var ypos;
+	  	while (obj.offsetParent) {
+	    	objleft += obj.offsetLeft;
+	    	objtop += obj.offsetTop;
+	    	obj = obj.offsetParent;
+	  	}
+	 	xpos = mouseEvent.pageX - objleft;
+	  	ypos = mouseEvent.pageY - objtop;
+	  	//console.log(xpos + ", " + ypos);
+	  	//$("#coord").text(xpos + ", " + ypos);
+	  	var pos = findMousePointTile(new Point(xpos, ypos))
+	  	if (pos) {
+	  		var row = pos[0];
+	  		var col = pos[1];
+	  		cardStatus[row][col].open = !cardStatus[row][col].open;
+	  		new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+	  	}
+	}
+
+
 	$(document).ready(function() {
 		
 		var canvas = $("#cardpan");
 		var canvasWidth = canvas.width();
 		var canvasHeight = canvas.height();
-	  	var context = canvas.get(0).getContext("2d");
+	  	context = canvas.get(0).getContext("2d");
 		
 		
 		buildCardTiles();
@@ -101,6 +141,7 @@
 				new CardDraw(context, cardStatus[i][j], tile2d[i][j]).draw();
 			}
 		}
+		canvas[0].onmousedown = doMouseClick;
 		
 	});
   </script>

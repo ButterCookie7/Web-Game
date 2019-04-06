@@ -53,20 +53,6 @@
 			return this.x < p1.x && p1.x < this.x+this.width
 			&& this.y < p1.y && p1.y < this.y+this.height;
 		}
-		this.image = new Image();
-    }
-    function CardDraw(ctx, card, tile) {
-    	this.ctx = ctx;
-    	this.card = card;
-    	this.tile = tile;
-    	this.draw = function() {
-    		//console.log("in draw",this.tile.x, this.tile.y, this.tile.image);
-    		this.tile.image.onload = function() {
-  				//console.log("in onload",tile.x, tile.y, tile.image);
-  				ctx.drawImage(tile.image, tile.x, tile.y, CARD_WIDTH, CARD_HEIGHT);
-  			}
-    		this.tile.image.src = this.card.getImageFile();
-    	}
     }
 	function drawRect(ctx, color, tile){
 		ctx.fillStyle = color;
@@ -76,6 +62,10 @@
 	const CARD_WIDTH = 71;
 	const CARD_HEIGHT = 96;
 	const GAP = 20;
+	
+  	const ROWMAX = 4;
+  	const COLMAX = 13;
+	
   	var cardImgFiles = [
   		"img/c1", "img/c2", "img/c3", "img/c4", "img/c5", "img/c6", "img/c7", "img/c8", "img/c9", "img/c10", "img/cj", "img/cq", "img/ck",
   		"img/d1", "img/d2", "img/d3", "img/d4", "img/d5", "img/d6", "img/d7", "img/d8", "img/d9", "img/d10", "img/dj", "img/dq", "img/dk",
@@ -84,9 +74,46 @@
   	];
   	cardImgFiles = cardImgFiles.map(f=>f+".png");
   	
-  	const ROWMAX = 4;
-  	const COLMAX = 13;
-	
+  	var cardImages = new Array(ROWMAX * COLMAX);
+  	var inloadingCount = 0;
+  	function loadImage(imgFile) {
+  		//console.log("loading Image -- "+imgFile);
+  		var image = new Image();
+  		image.src = imgFile;
+  		++inloadingCount;
+  		image.onload = function() {
+  			--inloadingCount;
+  		}
+  		return image;
+  	}
+  	function buildCardImages() {
+  		for (var i=0; i<cardImgFiles.length; ++i) {
+  			cardImages[i] = loadImage(cardImgFiles[i]);
+  		}
+  	}
+  	function waitImageLoading() {
+  		if (inloadingCount > 0)
+  			setTimeout(waitImageLoading, 100);
+  	}
+  	var cardBack = loadImage("img/b1fv.png");
+
+  	function Card(s, r) {
+  		// suit = {"club"=0, "diamond"=1, "space"=2, "heart"=3};
+  		// rank = { "A"=1, 2,...,10, "J"=11, "Q"=12, "K"=13}
+  		this.suit = s;
+  		this.rank = r;
+  		this.open = false;
+  		this.getImage = function() {
+  			//console.log(s, r, cardImgFiles[this.suit*13 + (this.rank-1)]);
+  			if (this.open)
+  				return cardImages[this.suit*13 + (this.rank-1)];
+  			else
+  				return cardBack;
+  		}
+  	}
+    function cardDraw(ctx, card, tile) {
+  		ctx.drawImage(card.getImage(), tile.x, tile.y, CARD_WIDTH, CARD_HEIGHT);
+    }
   	var context;
   	var tile2d;
   	var cardStatus;
@@ -102,20 +129,6 @@
 	var selCardA;
 	var selCardB;
   	
-  	function Card(s, r) {
-  		// suit = {"club"=0, "diamond"=1, "space"=2, "heart"=3};
-  		// rank = { "A"=1, 2,...,10, "J"=11, "Q"=12, "K"=13}
-  		this.suit = s;
-  		this.rank = r;
-  		this.open = false;
-  		this.getImageFile = function() {
-  			//console.log(s, r, cardImgFiles[this.suit*13 + (this.rank-1)]);
-  			if (this.open)
-  				return cardImgFiles[this.suit*13 + (this.rank-1)];
-  			else
-  				return "img/b1fv.png";
-  		}
-  	} 
   	function buildCardTiles() {
   		tile2d = new Array(ROWMAX);
   		for (var i=0; i<ROWMAX; ++i) {
@@ -171,10 +184,10 @@
 			case states.AFIRST:
 				selCardA = [row, col];
 				cardStatus[row][col].open = true;
-			  	new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  	cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 			  	setTimeout(function() {
 			  		cardStatus[row][col].open = false;
-			  		new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  		cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 			  	}, 1000);
 				gameState = states.ASECOND;
 				break;
@@ -184,7 +197,7 @@
 					break;
 				}
 				cardStatus[row][col].open = true;
-			  	new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  	cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 				row1 = selCardA[0];
 				col1 = selCardA[1];
 				rank1 = cardStatus[row1][col1].rank;
@@ -202,7 +215,7 @@
 				else {
 				  	setTimeout(function() {
 				  		cardStatus[row][col].open = false;
-				  		new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+				  		cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 				  	}, 1000);
 				}
 				gameState = states.BFIRST;
@@ -210,10 +223,10 @@
 			case states.BFIRST:
 				selCardB = [row, col];
 				cardStatus[row][col].open = true;
-			  	new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  	cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 			  	setTimeout(function() {
 			  		cardStatus[row][col].open = false;
-			  		new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  		cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 			  	}, 1000);
 			  	gameState = states.BSECOND;
 				break;
@@ -222,7 +235,7 @@
 					break;
 				}
 				cardStatus[row][col].open = true;
-			  	new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+			  	cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 				row1 = selCardB[0];
 				col1 = selCardB[1];
 				rank1 = cardStatus[row1][col1].rank;
@@ -240,7 +253,7 @@
 				else {
 				  	setTimeout(function() {
 				  		cardStatus[row][col].open = false;
-				  		new CardDraw(context, cardStatus[row][col], tile2d[row][col]).draw();
+				  		cardDraw(context, cardStatus[row][col], tile2d[row][col]);
 				  	}, 1000);
 				}
 				gameState = states.AFIRST;
@@ -289,14 +302,16 @@
 		var canvasHeight = canvas.height();
 	  	context = canvas.get(0).getContext("2d");
 		
-		
+	  	buildCardImages();
+	  	waitImageLoading();
+	  	
 		buildCardTiles();
 		buildCardStatus();
 		suffle(1000);
 		
 		for (var i=0; i<ROWMAX; ++i) {
 			for (var j=0; j<COLMAX; ++j) {
-				new CardDraw(context, cardStatus[i][j], tile2d[i][j]).draw();
+				cardDraw(context, cardStatus[i][j], tile2d[i][j]);
 			}
 		}
 		canvas[0].onmousedown = doMouseClick;

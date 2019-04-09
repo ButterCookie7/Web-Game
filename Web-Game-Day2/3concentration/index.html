@@ -93,6 +93,7 @@
   	}
   	function waitImageLoading() {
   		if (inloadingCount > 0)
+  			console.log("inloadingCount=", inloadingCount);
   			setTimeout(waitImageLoading, 100);
   	}
   	var cardBack = loadImage("img/b1fv.png");

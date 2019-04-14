@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Pong</title>
+  <style type="text/css">
+    #gameframe {
+      background-color: #EEFFFF;
+      position: absolute;
+      left: 0px;
+      top: 0px;      
+      width: 720px; 
+      height: 520px;
+    }
+    #pongpan {
+      position: absolute;
+      left: 0px;
+      top: 0px;      
+    }
+  </style>
+</head>
+<body>
+  <div id="gameframe" >
+    <canvas id="pongpan" width="700" height="500">
+    </canvas>
+  </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript">
+    const LINETHICKNESS = 10;
+    const PADDLE_SIZE = 50;
+    const PADDLE_OFFSET = 20;
+
+    var PAN_WIDTH;
+    var PAN_HEIGHT;
+    var canvas;
+    var context;
+    
+  	function Point(x, y){
+		this.x = x;
+		this.y = y;
+  	}
+    function Tile(x, y, w, h){
+		this.x = x;
+		this.y = y;
+		this.width = w;
+		this.height = h;
+		this.contains = function(p1) {
+			return this.x < p1.x && p1.x < this.x+this.width
+			&& this.y < p1.y && p1.y < this.y+this.height;
+		}
+    }
+	function drawLine(ctx, width, color, from, to) {
+		ctx.lineWidth = width;
+		ctx.strokeStyle = color;
+		ctx.beginPath();
+		ctx.moveTo(from.x, from.y);
+		ctx.lineTo(to.x, to.y); 
+		ctx.closePath();
+		ctx.stroke();					
+	}
+	function drawCircle(ctx, color, center, radius){
+		ctx.fillStyle = color;
+		ctx.beginPath(); 
+		ctx.arc(center.x , center.y, radius, 0, Math.PI*2, false);
+		ctx.closePath(); 
+		ctx.fill();
+	}
+	function drawRect(ctx, width, color, tile){
+		ctx.lineWidth = width;
+		ctx.strokeStyle = color;
+		ctx.rect(tile.x, tile.y, tile.width, tile.height);
+		ctx.stroke();					
+	}
+	function drawFillRect(ctx, color, tile){
+		ctx.fillStyle = color;
+		ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
+		ctx.fill();
+	}
+	function drawArena() {
+		drawFillRect(context, "black", new Tile(0,0,PAN_WIDTH,PAN_HEIGHT));
+		drawRect(context, LINETHICKNESS*2, "white", new Tile(0,0,PAN_WIDTH,PAN_HEIGHT));
+		drawLine(context, LINETHICKNESS/4, "white", new Point(PAN_WIDTH/2,0), new Point(PAN_WIDTH/2,PAN_HEIGHT));
+	}
+	function drawPaddle(paddle) {
+		drawFillRect(context, "white", paddle);
+	}
+	function drawBall(ball) {
+		drawCircle(context, "white", new Point(ball.x, ball.y), ball.radius);
+	}
+	$(document).ready(function() {
+		
+		canvas = $("#pongpan");
+		context = canvas.get(0).getContext("2d");
+		
+		PAN_WIDTH = canvas.width();
+		PAN_HEIGHT = canvas.height();
+
+		var ball = {
+				radius: LINETHICKNESS/2,
+				x: PAN_WIDTH/2,
+				y: PAN_HEIGHT/2,
+				dirX: -1, // -1 = left 1 = right
+				dirY: -1 // -1 = up 1 = down
+			}
+		var playerOnePosition = (PAN_HEIGHT - PADDLE_SIZE) /2;
+		var playerTwoPosition = (PAN_HEIGHT - PADDLE_SIZE) /2;
+	    var paddle1 = new Tile(PADDLE_OFFSET,playerOnePosition, LINETHICKNESS,PADDLE_SIZE)
+	    var paddle2 = new Tile(PAN_WIDTH - PADDLE_OFFSET - LINETHICKNESS, playerTwoPosition, LINETHICKNESS,PADDLE_SIZE)
+
+		drawArena();
+	    drawBall(ball);
+	    drawPaddle(paddle1)
+	    drawPaddle(paddle2)
+
+		//canvas[0].onmousedown = doMouseClick;
+
+	});
+  </script>
+</body>
+</html>  

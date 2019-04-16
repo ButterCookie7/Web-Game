@@ -167,9 +167,6 @@
 	function checkEdgeCollision(ball) {
 	    if (ball.y <= (LINETHICKNESS) || ball.y+LINETHICKNESS >= (PAN_HEIGHT - LINETHICKNESS)) {
 	        ball.dirY = -ball.dirY;
-	        console.log("ball speedY=", ball.speedY, "BF=", BOUNCE_FACTOR,"ballY=",ball.y);
-	        //ball.speedY = BOUNCE_FACTOR * ball.speedY;
-	        //console.log("ball speedY=", ball.speedY, "BF=", BOUNCE_FACTOR,"ballY=",ball.y);
 	    }
 	    if (ball.x <= (LINETHICKNESS) || ball.x+LINETHICKNESS >= (PAN_WIDTH - LINETHICKNESS))
 	        ball.dirX = -ball.dirX;
@@ -247,8 +244,8 @@
 	    }
 	}
 	function displayScores() {
-	    $("#scoreMe").html("Score Me = "+scoreMe);
-	    $("#scoreAI").html("Score AI = "+scoreAI);
+	    $("#scoreMe").html("Score AI-1 = "+scoreMe);
+	    $("#scoreAI").html("Score AI-2 = "+scoreAI);
 	}
 	function mainLoop() {
 		drawArena();

@@ -46,6 +46,7 @@
     const PAN_WIDTH = 700;
     const PAN_HEIGHT = 500;
     const COLL_FACTOR = 0.5;
+    const BOUNCE_FACTOR = 0.9;
     
     var canvas;
     var context;
@@ -84,13 +85,23 @@
 		this.x = x;
 		this.y = y;
 		this.oldY = y;
+		this.inBoundY = function() {
+			if (this.y-PADDLE_SIZE/2 < LINETHICKNESS) {
+				this.y = PADDLE_SIZE/2 + LINETHICKNESS;
+			}
+			else if (this.y+PADDLE_SIZE/2 > PAN_HEIGHT - LINETHICKNESS) {
+				this.y = PAN_HEIGHT - LINETHICKNESS - PADDLE_SIZE/2;
+			}
+		}
 		this.move = function(dy) {
 			this.oldY = this.y; 
 		    this.y += dy;
+		    this.inBoundY();
 		}
 		this.moveTo = function(y) {
 			this.oldY = this.y; 
 		    this.y = y;
+		    this.inBoundY();
 		}
 		this.speedY = function() {
 			return this.y - this.oldY;
@@ -154,32 +165,45 @@
 	    ball.y += (ball.dirY * ball.speedY);
 	}
 	function checkEdgeCollision(ball) {
-	    if (ball.y <= (LINETHICKNESS) || ball.y+LINETHICKNESS >= (PAN_HEIGHT - LINETHICKNESS))
-	        ball.dirY *= -1;
+	    if (ball.y <= (LINETHICKNESS) || ball.y+LINETHICKNESS >= (PAN_HEIGHT - LINETHICKNESS)) {
+	        ball.dirY = -ball.dirY;
+	        console.log("ball speedY=", ball.speedY, "BF=", BOUNCE_FACTOR,"ballY=",ball.y);
+	        //ball.speedY = BOUNCE_FACTOR * ball.speedY;
+	        //console.log("ball speedY=", ball.speedY, "BF=", BOUNCE_FACTOR,"ballY=",ball.y);
+	    }
 	    if (ball.x <= (LINETHICKNESS) || ball.x+LINETHICKNESS >= (PAN_WIDTH - LINETHICKNESS))
-	        ball.dirX *= -1;
+	        ball.dirX = -ball.dirX;
 	}
 	function checkHitBall() {
 	    if (ball.dirX === -1 && 
 	    	ball.x <= paddle1.x+LINETHICKNESS && ball.x >= paddle1.x  &&
-	    	paddle1.y-PADDLE_SIZE/2 < ball.y && 
-	    	paddle1.y+PADDLE_SIZE/2 > ball.y+LINETHICKNESS) {
+	    	paddle1.y-PADDLE_SIZE/2 < ball.y+LINETHICKNESS && 
+	    	paddle1.y+PADDLE_SIZE/2 > ball.y) {
 	    	// hit by paddle1
 	    	chgDir = -1;
-	    	console.log("paddle1 speed=", paddle1.speedY());
-	    	ball.speedY += Math.random()*COLL_FACTOR*paddle1.speedY();
+	    	ball.speedY += COLL_FACTOR*paddle1.speedY();
+	    	if (ball.speedY < 0) {
+	    		ball.speedY = -ball.speedY;
+	    		ball.dirY = -ball.dirY;
+	    	}
+	    	console.log("paddle1 speedY=", paddle1.speedY(), "ball speedY=", ball.speedY);
 	    }
 	    else if (ball.dirX === 1 && 
 	    	paddle2.x <= ball.x+LINETHICKNESS && paddle2.x+LINETHICKNESS >= ball.x &&
-	    	paddle2.y-PADDLE_SIZE/2  < ball.y &&
-	    	paddle2.y+PADDLE_SIZE/2 > ball.y+LINETHICKNESS) {
+	    	paddle2.y-PADDLE_SIZE/2  < ball.y+LINETHICKNESS &&
+	    	paddle2.y+PADDLE_SIZE/2 > ball.y) {
 	    	// hit by paddle 2
 	    	chgDir = -1;
-	    	console.log("paddle2 speed=", paddle2.speedY());
 	    	ball.speedY += COLL_FACTOR*paddle2.speedY();
+	    	if (ball.speedY < 0) {
+	    		ball.speedY = -ball.speedY;
+	    		ball.dirY = -ball.dirY;
+	    	}
+	    	console.log("paddle2 speedY=", paddle2.speedY(), "ball speedY=", ball.speedY);
 	    }
-	    else
+	    else {
 	    	chgDir = 1;
+	    }
 	    ball.dirX *= chgDir;
 	}
 	function checkPointScored() {
@@ -192,14 +216,14 @@
 	} 
 	function artificialIntelligenceLeft(paddle) {
 	    // If ball is moving away from paddle, center bat
-	    if (ball.dirX === 1) {
+	    if (ball.dirX > 0) {
 	        if (paddle.y < (PAN_HEIGHT/2))
-	            paddle.move(2);
+	            paddle.move(1);
 	        else if (paddle.y > (PAN_HEIGHT/2))
-	            paddle.move(-2);
+	            paddle.move(-1);
 	    }
 	    // if ball moving towards bat, track its movement. 
-	    else if (ball.dirX === -1) {
+	    else if (ball.dirX < 0) {
 	        if (paddle.y < ball.y+LINETHICKNESS/2)
 	            paddle.move(2);
 	        else
@@ -208,18 +232,18 @@
 	}
 	function artificialIntelligenceRight(paddle) {
 	    // If ball is moving away from paddle, center bat
-	    if (ball.dirX === -1) {
+	    if (ball.dirX < 0) {
 	        if (paddle.y < (PAN_HEIGHT/2))
-	            paddle.move(2);
+	            paddle.move(1);
 	        else if (paddle2.y > (PAN_HEIGHT/2))
-	            paddle.move(-2);
+	            paddle.move(-1);
 	    }
 	    // if ball moving towards bat, track its movement. 
-	    else if (ball.dirX === 1) {
+	    else if (ball.dirX > 0) {
 	        if (paddle.y < ball.y+LINETHICKNESS/2)
-	            paddle.move(2);
+	            paddle.move(4*Math.random());
 	        else
-	            paddle.move(-2);
+	            paddle.move(-4*Math.random());
 	    }
 	}
 	function displayScores() {

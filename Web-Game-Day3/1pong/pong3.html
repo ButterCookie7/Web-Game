@@ -234,9 +234,9 @@
 	    // if ball moving towards bat, track its movement. 
 	    else if (ball.dirX < 0) {
 	        if (paddle.y < ball.y+LINETHICKNESS/2)
-	            paddle.move(2);
+	            paddle.move(Math.round(4*Math.random()));
 	        else
-	            paddle.move(-2);
+	            paddle.move(-Math.round(4*Math.random()));
 	    }
 	}
 	function artificialIntelligenceRight(paddle) {
@@ -250,9 +250,9 @@
 	    // if ball moving towards bat, track its movement. 
 	    else if (ball.dirX > 0) {
 	        if (paddle.y < ball.y+LINETHICKNESS/2)
-	            paddle.move(4*Math.random());
+	            paddle.move(2);
 	        else
-	            paddle.move(-4*Math.random());
+	            paddle.move(-2);
 	    }
 	}
 	function displayScores() {

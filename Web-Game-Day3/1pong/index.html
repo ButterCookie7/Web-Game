@@ -142,11 +142,13 @@
 	    	paddle1.y-PADDLE_SIZE/2 < ball.y+LINETHICKNESS && 
 	    	paddle1.y+PADDLE_SIZE/2 > ball.y) {
 	    	chgDir = -1;
+	    }
 	    else if (ball.dirX === 1 && 
 	    	paddle2.x <= ball.x+LINETHICKNESS && paddle2.x+LINETHICKNESS >= ball.x &&
 	    	paddle2.y-PADDLE_SIZE/2  < ball.y+LINETHICKNESS &&
 	    	paddle2.y+PADDLE_SIZE/2 > ball.y) {
 	    	chgDir = -1;
+	    }
 	    else
 	    	chgDir = 1;
 	    ball.dirX *= chgDir;

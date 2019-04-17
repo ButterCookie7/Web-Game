@@ -189,7 +189,7 @@
 	    		ball.speedY = -ball.speedY;
 	    		ball.dirY = -ball.dirY;
 	    	}
-	    	console.log("paddle1 speedY=", paddle1.speedY(), "ball speedY=", ball.speedY);
+	    	console.log("paddle1 speedY=", paddle1.speedY(), "ball speedY*dirY=", ball.speedY*ball.dirY);
 	    }
 	    else if (ball.dirX === 1 && 
 	    	paddle2.x <= ball.x+LINETHICKNESS && paddle2.x+LINETHICKNESS >= ball.x &&
@@ -199,16 +199,16 @@
 	    	chgDir = -1;
 	    	if (ball.dirY > 0) {
 	    		// ball goes down
-	    		ball.speedY += COLL_FACTOR*paddle1.speedY();
+	    		ball.speedY += COLL_FACTOR*paddle2.speedY();
 	    	}
 	    	else {
-	    		ball.speedY -= COLL_FACTOR*paddle1.speedY();
+	    		ball.speedY -= COLL_FACTOR*paddle2.speedY();
 	    	}
 	    	if (ball.speedY < 0) {
 	    		ball.speedY = -ball.speedY;
 	    		ball.dirY = -ball.dirY;
 	    	}
-	    	console.log("paddle2 speedY=", paddle2.speedY(), "ball speedY=", ball.speedY);
+	    	console.log("paddle2 speedY=", paddle2.speedY(), "ball speedY*dirY=", ball.speedY*ball.dirY);
 	    }
 	    else {
 	    	chgDir = 1;

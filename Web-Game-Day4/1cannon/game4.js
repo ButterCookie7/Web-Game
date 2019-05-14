@@ -46,7 +46,7 @@ function update() {
 }
 function draw() {
 	clearCanvas();
-	ballCen = { x : ballSprite.width / 2, y : ballSprite.height / 2 };
+	drawImage(sprites["background"], { x : 0, y : 0 }, 0, { x : 0, y : 0 });
 	drawImage(ballSprite, mousePos, 0, ballCen);
     drawImage(cannonSprite, cannonPos, cannonRot, cannonCen);
     drawImage(markSprite, markPos, 0, markCen);
@@ -80,6 +80,7 @@ function loadSprite(imageName) {
     return image;
 }
 function loadAssets() {
+	sprites["background"] = loadSprite("img/" + "spr_background.png");
 	sprites["cannonBarrel"] = loadSprite("img/" + "spr_cannon_barrel.png");
 	sprites["ballRed"] = loadSprite("img/" + "spr_ball_red.png");
 	sprites["ballBlue"] = loadSprite("img/" + "spr_ball_blue.png");
@@ -107,6 +108,7 @@ function initialize() {
 	//markSprite = sprites["markRed"];
 	ballSprite = sprites["ballBlue"];
 	markSprite = sprites["markBlue"];
+	ballCen = { x : ballSprite.width / 2, y : ballSprite.height / 2 };
 	// Mouse initialize
     document.onmousemove = handleMouseMove;
     document.onmousedown = handleMouseDown;

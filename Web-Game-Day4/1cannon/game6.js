@@ -2,55 +2,34 @@
 var canvas;
 var canvasContext;
 
-var ball = {
-};
-ball.initialize = function() {
-    ball.position = { x : 0, y : 0 };
-    ball.velocity =  { x : 0, y : 0 };
-    ball.center = { x : 0, y : 0 };
-    ball.sprite = sprites["ballRed"];
-    ball.shooting = false;
-};
-ball.handleInput = function () {
-    if (leftPressed && !ball.shooting) {
-        ball.shooting = true;
-        ball.velocity.x = (mousePos.x - ball.position.x) * 1.2;
-        ball.velocity.y = (mousePos.y - ball.position.y) * 1.2;
-    }
-};
+function Ball() {
+	this.position = { x : 0, y : 0 };
+	this.velocity =  { x : 0, y : 0 };
+	this.center = { x : 0, y : 0 };
+	this.sprite = sprites["ballRed"];
+	this.shooting = false;
+	
+	this.update = function (delta) {
+	    if (this.shooting) {
+	    	this.velocity.x *= 0.99;
+	    	this.velocity.y += 6;
+	    	this.position.x += this.velocity.x * delta;
+	    	this.position.y += this.velocity.y * delta;
+	    	if (isOutsideWorld(this.position))
+	    		this.reset();
+	    }
+	};
 
-ball.update = function (delta) {
-	//console.log(ball.sprite)
-    if (ball.shooting) {
-        ball.velocity.x *= 0.99;
-        ball.velocity.y += 6;
-        ball.position.x += ball.velocity.x * delta;
-        ball.position.y += ball.velocity.y * delta;
-    }
-    else {
-        if (markSprite === sprites["markRed"])
-        	ball.sprite = sprites["ballRed"];
-        else if (markSprite === sprites["markGreen"])
-        	ball.sprite = sprites["ballGreen"];
-        else
-        	ball.sprite = sprites["ballBlue"];
-        ball.position = ballPosition();
-        ball.position.x -= ball.sprite.width / 2;
-        ball.position.y -= ball.sprite.height / 2;
-    }
-    if (isOutsideWorld(ball.position))
-        ball.reset();
-};
+	this.reset = function () {
+	    this.position = { x : 0, y : 0 };
+	    this.shooting = false;
+	};
 
-ball.reset = function () {
-    ball.position = { x : 0, y : 0 };
-    ball.shooting = false;
-};
+	this.draw = function () {
+	    if (this.shooting)
+	    	drawImage(this.sprite, this.position, 0, this.center);
+	};
 
-ball.draw = function () {
-    if (!ball.shooting)
-        return;
-    drawImage(ball.sprite, ball.position, 0, ball.center);
 };
 function isOutsideWorld(position) {
     return position.x < 0 || position.x > canvas.width || position.y > canvas.height;
@@ -74,6 +53,7 @@ var leftPressed = false;
 
 var spritesStillLoading = 0;
 var sprites = {};
+var balls = [];
 
 window.requestAnimationFrame =  window.requestAnimationFrame ||
 								window.webkitRequestAnimationFrame ||
@@ -99,13 +79,17 @@ function update(delta) {
     var sero = mousePos.y - cannonPos.y;
     var garo = mousePos.x - cannonPos.x;
     cannonRot = Math.atan2(sero, garo);
-    ball.update(delta);
+    for (var i=0; i < balls.length; ++i) {
+        balls[i].update(delta);
+    }
 }
 function draw() {
 	drawImage(sprites["background"], { x : 0, y : 0 }, 0, { x : 0, y : 0 });
     drawImage(cannonSprite, cannonPos, cannonRot, cannonCen);
     drawImage(markSprite, markPos, 0, markCen);
-    ball.draw();
+    for (var i=0; i < balls.length; ++i) {
+    	balls[i].draw();
+    }
 }
 function handleMouseMove(evt) {
 	mousePos = { x : evt.clientX, y : evt.clientY };
@@ -119,8 +103,9 @@ function handleMouseDown(evt) {
 }
 
 function handleMouseUp(evt) {
-    if (evt.which === 1)
+    if (evt.which === 1) {
         leftDown = false;
+    }
 }
 function mouseReset() {
     leftPressed = false;
@@ -158,14 +143,31 @@ function handleInput() {
     //cannon handleInput
 	
 	// ball handleInput
-	ball.handleInput()
+	if (leftPressed) {
+		var ball = new Ball();
+		ball.shooting = true;
+		ball.position = ballPosition();
+		ball.velocity.x = (mousePos.x - ball.position.x) * 1.2;
+		ball.velocity.y = (mousePos.y - ball.position.y) * 1.2;
+		if (markSprite === sprites["markRed"])
+			ball.sprite = sprites["ballRed"];
+		else if (markSprite === sprites["markGreen"])
+			ball.sprite = sprites["ballGreen"];
+		else
+			ball.sprite = sprites["ballBlue"];
+		ball.position.x -= ball.sprite.width / 2;
+		ball.position.y -= ball.sprite.height / 2;
+		balls.push(ball);
+		//console.log("balls.length=",balls.length);
+    }
+    
 }
 function initialize() {
     // cannon initialize
 	cannonSprite = sprites["cannonBarrel"];
 	markSprite = sprites["markRed"];
 	// ball initialize
-	ball.initialize();
+	
 	// Mouse initialize
     document.onmousemove = handleMouseMove;
     document.onmousedown = handleMouseDown;

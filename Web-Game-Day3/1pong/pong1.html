@@ -140,9 +140,9 @@
 	}
 	function checkEdgeCollision(ball) {
 	    if (ball.y <= (LINETHICKNESS) || ball.y+LINETHICKNESS >= (PAN_HEIGHT - LINETHICKNESS))
-	        ball.dirY *= -1;
+	        ball.dirY = -ball.dirY;
 	    if (ball.x <= (LINETHICKNESS) || ball.x+LINETHICKNESS >= (PAN_WIDTH - LINETHICKNESS))
-	        ball.dirX *= -1;
+	        ball.dirX = -ball.dirX;
 	}
 	function checkHitBall() {
 	    if (ball.dirX === -1 && 

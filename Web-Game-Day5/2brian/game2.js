@@ -25,6 +25,19 @@ function Sprite(sprite, pos) {
 	}
 	
 }
+function Sound(sound) {
+	this.sound = new Audio();
+	this.sound.src = sound;
+	this.onplay = false;
+	this.play = function () {
+	    if (this.sound === null || this.onplay) {
+	        return;
+	    }
+    	//console.log("Sound play");
+	    this.sound.load();
+	    this.sound.autoplay = true;
+	}
+}
 function Button(color) {
 	this.litSprite = sprites[color+'lit'];
 	this.unlitSprite = sprites[color+'unlit'];
@@ -67,8 +80,9 @@ function Button(color) {
 
 var spritesStillLoading = 0;
 var sprites = {};
+var sounds = [];
 
-const LOOPDELAY = 80;
+const LOOPDELAY = 120;
 
 var myButtons = [];
 var playButton;
@@ -140,9 +154,12 @@ function update() {
             for (var i=0; i<myButtons.length; ++i) {
                 if (litButton === bcount) {
                 	myButtons[i].state = true;
+                    sounds[i].play();
+                    sounds[i].onplay = true;
                 }
                 else {
                 	myButtons[i].state = false;
+                	sounds[i].onplay = false;
                 }
                 bcount += 1;
             }
@@ -194,7 +211,10 @@ function handleMouseDown(evt) {
             if (myButtons[i].contains(mousePos)) {
                 playerInput.push(bcount);
                 myButtons[i].state = true;
-                console.log("sel btn=", i);
+                //console.log("sel btn=", i);
+                //console.log("i=",i,"sounds[i].onplay=", sounds[i].onplay);
+                sounds[i].play();
+
             }
             bcount += 1;
         }
@@ -263,6 +283,7 @@ function loadSprite(imageName) {
     return image;
 }
 function loadAssets() {
+	// load sprites
 	sprites["redunlit"] = loadSprite("images/redunlit.png");
 	sprites["greenunlit"] = loadSprite("images/greenunlit.png");
 	sprites["blueunlit"] = loadSprite("images/blueunlit.png");
@@ -272,6 +293,11 @@ function loadAssets() {
 	sprites["bluelit"] = loadSprite("images/bluelit.png");
 	sprites["yellowlit"] = loadSprite("images/yellowlit.png");
 	sprites["play"] = loadSprite("images/play.png");
+	// load sounds
+	sounds.push(new Sound("sounds/60.ogg"));
+	sounds.push(new Sound("sounds/62.ogg"));
+	sounds.push(new Sound("sounds/64.ogg"));
+	sounds.push(new Sound("sounds/65.ogg"));
 
 }
 function assetLoadingLoop() {

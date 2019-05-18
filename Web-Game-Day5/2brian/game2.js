@@ -82,7 +82,7 @@ var spritesStillLoading = 0;
 var sprites = {};
 var sounds = [];
 
-const LOOPDELAY = 120;
+const LOOPDELAY = 80;
 
 var myButtons = [];
 var playButton;

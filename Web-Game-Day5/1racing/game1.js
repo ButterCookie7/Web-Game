@@ -5,6 +5,9 @@ const FPS = 60;
 var canvas;
 var canvasContext;
 
+function randint(st, end) {
+	return Math.floor(Math.random() * (end-st+1) + st);
+}
 function Car() {
 	this.position = { x : 250, y : 700 };
 	this.sprite = sprites["racecar"];
@@ -104,7 +107,7 @@ function updateTrack() {
 	    else 
 	    	trackPosition += 16;
 	    
-	    if (Math.floor((Math.random() * 4)) === 1)
+	    if (randint(0, 4) === 1)
 	    	trackDirection = ! trackDirection;
 	    if (trackPosition > 700-TRACK_WIDTH)
 	    	trackDirection = true

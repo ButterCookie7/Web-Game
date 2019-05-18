@@ -1,15 +1,34 @@
 
 const ZERO_POS = { x : 0, y : 0 };
+const FPS = 60;
 
 var canvas;
 var canvasContext;
 
 const CENTER_POS = { x : 400, y : 270 };
+var mousePos = { x : 0, y : 0 };
 
+function randint(st, end) {
+	return Math.floor(Math.random() * (end-st+1) + st);
+}
+
+function Sprite(sprite, pos) {
+	this.sprite = sprite;
+	this.position = pos;
+	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
+	this.contains = function(p1) {
+		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
+		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
+	}
+	this.draw = function () {
+		drawImage(this.sprite, this.position, 0, this.center);
+	}
+	
+}
 function Button(color) {
 	this.litSprite = sprites[color+'lit'];
 	this.unlitSprite = sprites[color+'unlit'];
-	this.litState = false;
+	this.state = false;
 	this.size = { x : this.litSprite.width, y : this.litSprite.height };
 	
 	var pos = { x : 0, y : 0 };
@@ -32,26 +51,31 @@ function Button(color) {
 	this.position = pos;
 
 	this.draw = function () {
-		if (this.litState) {
+		if (this.state) {
 			drawImage(this.litSprite, this.position, 0, ZERO_POS);
 		}
 		else {
 			drawImage(this.unlitSprite, this.position, 0, ZERO_POS);
 		}
 	};
+	this.contains = function(p1) {
+		return this.position.x < p1.x && p1.x < this.position.x+this.size.x
+		&& this.position.y < p1.y && p1.y < this.position.y+this.size.y;
+	};
 
-};
+}
 
 var spritesStillLoading = 0;
 var sprites = {};
 
 const LOOPDELAY = 80;
-var gameCountdown = -1
 
 var myButtons = [];
 var playButton;
+var buttonList = [];
 var playPosition = 0;
 var playingAnimation = false;
+var gameCountdown = -1;
 var score = 0;
 var playerInput = [];
 var signalScore = false;
@@ -77,27 +101,154 @@ function drawImage (sprite, position, rotation, center) {
 			-center.x, -center.y, sprite.width, sprite.height);
 	canvasContext.restore();
 }
-function update() {
+function drawText(textId, textStr) {
+	var textArea = document.getElementById(textId)
+	textArea.innerHTML = textStr;
+	textArea.style.cursor = "default";
+}
+function clearButtons() {
+	for (var i=0; i<myButtons.length; ++i) {
+		myButtons[i].state = false;
+	}
 }
 
+function playAnimation() {
+    playPosition = 0;
+    playingAnimation = true;
+}
+
+function addButton() {
+    buttonList.push(randint(0, 3));
+    playAnimation();
+}
+
+function update() {
+    if (playingAnimation) {
+        playPosition += 1;
+        var listpos = Math.floor(playPosition/LOOPDELAY);
+        if (listpos === buttonList.length) {
+            playingAnimation = false;
+            clearButtons();
+        }
+        else {
+            var litButton = buttonList[listpos];
+            if (playPosition%LOOPDELAY > LOOPDELAY/2) {
+            	litButton = -1;
+            }
+            var bcount = 0
+            for (var i=0; i<myButtons.length; ++i) {
+                if (litButton === bcount) {
+                	myButtons[i].state = true;
+                }
+                else {
+                	myButtons[i].state = false;
+                }
+                bcount += 1;
+            }
+        }
+    }
+    if (gameCountdown > 0) {
+        gameCountdown -=1
+        if (gameCountdown === 0) {
+            addButton();
+            playerInput = [];
+        }
+    }
+}
+
+function gameOver() {
+    gameStarted = false;
+    gameCountdown = -1;
+    playerInput = [];
+    buttonList = [];
+    clearButtons();
+}
+
+function checkPlayerInput() {
+    var ui = 0;
+    while (ui < playerInput.length) {
+        //console.log("ui=", ui);
+        if (playerInput[ui] != buttonList[ui]) {
+        	gameOver();
+        	return;
+        }
+        ui += 1;
+    }
+    if (ui >= buttonList.length) {
+    	signalScore = true;
+    }
+    //console.log("playerInput=", playerInput);
+    //console.log("buttonList=", buttonList);
+
+}
+
+function handleMouseMove(evt) {
+	mousePos = {x: evt.clientX, y: evt.clientY };
+}
 function handleMouseDown(evt) {
-    if (evt.which === 1) {
-        if (!leftDown)
-            leftPressed = true;
-        leftDown = true;
+	
+    if (!playingAnimation && gameCountdown === 0) {
+        bcount = 0;
+        for (var i=0; i<myButtons.length; ++i) {
+            if (myButtons[i].contains(mousePos)) {
+                playerInput.push(bcount);
+                myButtons[i].state = true;
+                console.log("sel btn=", i);
+            }
+            bcount += 1;
+        }
+        checkPlayerInput();
     }
 }
 
 function handleMouseUp(evt) {
-    if (evt.which === 1) {
-        leftDown = false;
+	
+    if (!playingAnimation && gameCountdown === 0) {
+        for (var i=0; i<myButtons.length; ++i) {
+            myButtons[i].state = false;
+        }
     }
+    if (playButton.contains(mousePos) && !gameStarted) {
+        gameStarted = true;
+        score = 0;
+        gameCountdown = LOOPDELAY;
+ 
+    }
+    if (signalScore) {
+        score += 1;
+        gameCountdown = LOOPDELAY;
+        clearButtons();
+        signalScore = false;
+    }
+   	//console.log("mouseup play", mousePos, playButton.contains(mousePos),gameStarted, signalScore, score);
 }
 
 function draw() {
-	drawImage(playButton, { x : 400, y : 540 }, 0, playButtonCen);
+	
+	clearCanvas();
+
 	for (var i=0; i<myButtons.length; ++i) {
 		myButtons[i].draw();
+	}
+	if (gameStarted) {
+		drawText('scoreArea', "Score : " + score);
+	}
+	else {
+		playButton.draw();
+		
+		drawText('scoreArea', "Play");
+		if (score > 0) {
+			drawText('titleArea', "Final Score : " + score);
+		}
+		else {
+			drawText('titleArea', "Press Play to Start");
+		}
+	}
+	if (playingAnimation || gameCountdown > 0) {
+		drawText('titleArea', "Watch");
+	}
+	if (!playingAnimation && gameCountdown === 0) {
+		drawText('titleArea', "Now You");
 	}
 }
 
@@ -136,8 +287,7 @@ function handleInput() {
     
 function initialize() {
 	// button init
-	playButton = sprites["play"];
-	playButtonCen = { x : playButton.width / 2, y : playButton.height / 2};
+	playButton = new Sprite(sprites["play"], { x : 400, y : 540 });
 	myButtons.push(new Button('red'));
 	myButtons.push(new Button('green'));
 	myButtons.push(new Button('blue'));
@@ -145,12 +295,15 @@ function initialize() {
 	// mouse initialize
     document.onmousedown = handleMouseDown;
     document.onmouseup = handleMouseUp;
+    document.onmousemove = handleMouseMove;
+    
+	canvas.style.cursor = "default";
+
 }
 function mainLoop() {
     handleInput();
     update();
     
-	clearCanvas();
     draw();
     
     window.requestAnimationFrame(mainLoop);

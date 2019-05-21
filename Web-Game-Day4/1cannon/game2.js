@@ -1,3 +1,4 @@
+
 var canvas;
 var canvasContext;
 var ballSprite;

@@ -1,6 +1,7 @@
 
 var canvas;
 var canvasContext;
+
 var cannonSprite;
 var cannonPos = { x : 72, y : 405 };
 var cannonCen = { x : 34, y : 34 };
@@ -11,6 +12,9 @@ var markSprite;
 var markPos = { x : 55, y : 388 };
 var markCen = { x : 0, y : 0 };
 
+var mousePos = { x : 0, y : 0 };
+var leftDown = false;
+var leftPressed = false;
 
 var mousePos = { x : 0, y : 0 };
 

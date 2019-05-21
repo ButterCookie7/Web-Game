@@ -104,10 +104,10 @@ function handleInput() {
 function initialize() {
     // cannon initialize
 	cannonSprite = sprites["cannonBarrel"];
-	//ballSprite = sprites["ballRed"];
-	//markSprite = sprites["markRed"];
-	ballSprite = sprites["ballBlue"];
-	markSprite = sprites["markBlue"];
+	ballSprite = sprites["ballRed"];
+	markSprite = sprites["markRed"];
+	//ballSprite = sprites["ballBlue"];
+	//markSprite = sprites["markBlue"];
 	ballCen = { x : ballSprite.width / 2, y : ballSprite.height / 2 };
 	// Mouse initialize
     document.onmousemove = handleMouseMove;
@@ -116,8 +116,11 @@ function initialize() {
 }
 function mainLoop() {
     handleInput();
-    update();
+    update(delta);
+    
+	clearCanvas();
     draw();
+    
     mouseReset();
     window.requestAnimationFrame(mainLoop);
 }

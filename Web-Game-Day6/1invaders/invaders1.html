@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Invaders</title>
+  <style type="text/css">
+    .baseText {
+      color: #ff4000;
+      -webkit-text-stroke: 1px white;
+      width: 800px;
+	  text-align: center;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
+    .scoreText {
+      color: #0040ff;
+      width: 780px;
+      -webkit-text-stroke: 1px white;
+      text-align: right;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
+    #gamepan {
+      background-color: #1e0a1e;
+      position: absolute;
+      left: 0px;
+      top: 0px;      
+      padding: 0px 0px;
+    }
+    #scoreArea {
+      position: absolute;
+      left: 0px;
+      top: 10px;      
+      padding: 0px 0px;
+    }
+    #textArea {
+      position: absolute;
+      left: 0px;
+      top: 250px;      
+      padding: 0px 0px;
+    }
+  </style>
+  <script src="Keys.js"></script>   
+  <script src="game1.js"></script>   
+</head>
+<body>
+<div id="gameArea">
+  <canvas id="gamepan" width="800" height="600">
+  </canvas>
+  <div id="textArea" class="baseText"></div>
+  <div id="scoreArea" class="scoreText"></div>
+</div>
+
+</body>
+</html>  

@@ -2,7 +2,7 @@
 const ZERO_POS = { x : 0, y : 0 };
 const FPS = 60;
 const DIFFICULTY = 1
-
+const ALIEN_SPEEDX = 15;
 var canvas;
 var canvasContext;
 
@@ -30,6 +30,11 @@ function Base(sprite, midbotPos) {
 	this.sprite = sprite;
 	this.position = midbotPos;
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height };
+	this.collidepoint = function(p1) {
+		var dh = this.sprite.height - this.height;
+		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
+		&& this.position.y-this.center.y+dh < p1.y && p1.y < this.position.y+this.center.y;
+	};
 	this.contains = function(p1) {
 		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
 		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
@@ -68,8 +73,8 @@ function Player(color) {
 		drawImage(playerSprites[Math.floor(this.status/6)], this.position, 0, this.center);
 	};
 	this.contains = function(p1) {
-		return this.position.x < p1.x && p1.x < this.position.x+this.size.x
-		&& this.position.y < p1.y && p1.y < this.position.y+this.size.y;
+		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
+		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
 	};
 
 }
@@ -99,7 +104,7 @@ var bases = [];
 var lasers = [];
 var moveCounter = 0;
 var moveSequence = 0;
-var moveDelay = 30;;
+var moveDelay = FPS/2;;
 
 var score = 0;
 
@@ -242,7 +247,7 @@ function checkLaserHit(l) {
         lasers[l].status = 1;
     }
     for (var b=0; b<bases.length; ++b) {
-        if (bases[b].contains({x: lasers[l].position.x, y: lasers[l].position.y+lasers[l].center.y})) {
+        if (bases[b].collidepoint({x: lasers[l].position.x, y: lasers[l].position.y+lasers[l].center.y})) {
             bases[b].height -= 10;
             lasers[l].status = 1;
         }
@@ -287,14 +292,14 @@ function updateAliens() {
     var movex = 0;
     var movey = 0;
     if (moveSequence < 10 || moveSequence > 30) {
-    	movex = -15;
+    	movex = -ALIEN_SPEEDX;
     }
     if (moveSequence === 10 || moveSequence === 30) {
         movey = 50 + (10 * DIFFICULTY);
         moveDelay -= 1;
     }
     if (moveSequence >10 && moveSequence < 30) {
-    	movex = 15;
+    	movex = ALIEN_SPEEDX;
     }
     for (var a=0; a<aliens.length; ++a) {
         //animate(aliens[a], pos=(aliens[a].x + movex, aliens[a].y + movey), duration=0.5, tween='linear')

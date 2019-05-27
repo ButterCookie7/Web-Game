@@ -2,7 +2,7 @@
 const ZERO_POS = { x : 0, y : 0 };
 const FPS = 60;
 const DIFFICULTY = 1
-const ALIEN_SPEEDX = 15;
+const ALIEN_SPEEDX = 0.5;
 var canvas;
 var canvasContext;
 
@@ -108,6 +108,8 @@ var moveDelay = FPS/2;;
 
 var score = 0;
 
+var movex = 0;
+var movey = 0;
 
 window.requestAnimationFrame =  window.requestAnimationFrame ||
 								window.webkitRequestAnimationFrame ||
@@ -165,6 +167,7 @@ function update() {
             moveCounter = 0;
             updateAliens();
         }
+        updateAliensX();
         if (player.status > 0) {
         	player.status += 1;
         } 
@@ -287,10 +290,14 @@ function updateLasers() {
     lasers = listCleanup(lasers);
     aliens = listCleanup(aliens);	
 }
+function updateAliensX() {
+    for (var a=0; a<aliens.length; ++a) {
+    	aliens[a].position.x += movex;
+    }
+}
 
 function updateAliens() {
-    var movex = 0;
-    var movey = 0;
+	movey = 0;
     if (moveSequence < 10 || moveSequence > 30) {
     	movex = -ALIEN_SPEEDX;
     }
@@ -303,7 +310,7 @@ function updateAliens() {
     }
     for (var a=0; a<aliens.length; ++a) {
         //animate(aliens[a], pos=(aliens[a].x + movex, aliens[a].y + movey), duration=0.5, tween='linear')
-    	aliens[a].position = {x: aliens[a].position.x + movex, y: aliens[a].position.y + movey};
+    	aliens[a].position = {x: aliens[a].position.x, y: aliens[a].position.y + movey};
         if (randint(0, 1) === 0) {
             aliens[a].sprite = sprites["alien1"];
         }

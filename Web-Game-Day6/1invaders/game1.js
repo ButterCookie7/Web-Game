@@ -60,7 +60,7 @@ function Laser(sprite, pos) {
 		drawImage(this.sprite, this.position, 0, this.center);
 	};
 }
-function Player(color) {
+function Player() {
 	this.status = 0;
 	this.laserCountdown = 0;
 	this.laserActive = 1;

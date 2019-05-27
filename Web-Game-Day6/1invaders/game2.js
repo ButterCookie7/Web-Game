@@ -60,7 +60,7 @@ function Laser(sprite, pos) {
 		drawImage(this.sprite, this.position, 0, this.center);
 	};
 }
-function Player(color) {
+function Player() {
 	this.status = 0;
 	this.laserCountdown = 0;
 	this.laserActive = 1;
@@ -78,7 +78,9 @@ function Player(color) {
 	};
 
 }
-
+function Boss() {
+	
+}
 function Sound(sound) {
 	this.sound = new Audio();
 	this.sound.src = sound;
@@ -96,6 +98,9 @@ function Sound(sound) {
 var spritesStillLoading = 0;
 var sprites = {};
 var sounds = {};
+
+var gameStatus = 0;
+var highScore = [];
 
 var player;
 var aliens = [];
@@ -145,6 +150,11 @@ function draw() {
 	clearCanvas();
 	clearTexts();
 	drawImage(sprites['background'], ZERO_POS, 0, ZERO_POS);
+	
+    if (gameStatus === 0) {
+    	// display the title page
+    	drawText('textArea', "PYGAME ZERO INVADERS<br><br><br>Type your name then<br>press Enter to start<br>(arrow keys move, space to fire)");
+    }
 
 	player.draw();
 

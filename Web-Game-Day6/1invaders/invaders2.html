@@ -4,11 +4,19 @@
   <meta charset=utf-8>
   <title>Invaders</title>
   <style type="text/css">
-    .gameText {
-      color: #e18000;
+    .baseText {
+      color: #ff4000;
       -webkit-text-stroke: 1px white;
       width: 800px;
 	  text-align: center;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
+    .scoreText {
+      color: #0040ff;
+      width: 780px;
+      -webkit-text-stroke: 1px white;
+      text-align: right;
       font-size: xx-large;
 	  font-weight: bold;
     }
@@ -19,15 +27,16 @@
       top: 0px;      
       padding: 0px 0px;
     }
-    #titleArea {
+    #scoreArea {
       position: absolute;
-      top: 20px;      
+      left: 0px;
+      top: 10px;      
       padding: 0px 0px;
     }
-    #scoreArea {
-      font-size: x-large;
+    #textArea {
       position: absolute;
-      top: 525px;      
+      left: 0px;
+      top: 250px;      
       padding: 0px 0px;
     }
   </style>
@@ -38,8 +47,8 @@
 <div id="gameArea">
   <canvas id="gamepan" width="800" height="600">
   </canvas>
-  <div id="titleArea" class="gameText">Press Play to Start</div>
-  <div id="scoreArea" class="gameText">Play</div>
+  <div id="textArea" class="baseText"></div>
+  <div id="scoreArea" class="scoreText"></div>
 </div>
 
 </body>

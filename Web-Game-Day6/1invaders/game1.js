@@ -136,9 +136,14 @@ function drawText(textId, textStr) {
 	textArea.innerHTML = textStr;
 	textArea.style.cursor = "default";
 }
+function clearTexts() {
+	drawText('textArea', '');
+}
+
 function draw() {
 
 	clearCanvas();
+	clearTexts();
 	drawImage(sprites['background'], ZERO_POS, 0, ZERO_POS);
 
 	player.draw();
@@ -162,12 +167,7 @@ function update() {
         checkKeys();
         checkBases();
         updateLasers();
-        moveCounter += 1;
-        if (moveCounter === moveDelay) {
-            moveCounter = 0;
-            updateAliens();
-        }
-        updateAliensX();
+        updateAliens();
         if (player.status > 0) {
         	player.status += 1;
         } 
@@ -290,50 +290,58 @@ function updateLasers() {
     lasers = listCleanup(lasers);
     aliens = listCleanup(aliens);	
 }
-function updateAliensX() {
-    for (var a=0; a<aliens.length; ++a) {
-    	aliens[a].position.x += movex;
-    }
-}
 
 function updateAliens() {
-	movey = 0;
-    if (moveSequence < 10 || moveSequence > 30) {
-    	movex = -ALIEN_SPEEDX;
-    }
-    if (moveSequence === 10 || moveSequence === 30) {
-        movey = 50 + (10 * DIFFICULTY);
-        moveDelay -= 1;
-    }
-    if (moveSequence >10 && moveSequence < 30) {
-    	movex = ALIEN_SPEEDX;
-    }
-    for (var a=0; a<aliens.length; ++a) {
-        //animate(aliens[a], pos=(aliens[a].x + movex, aliens[a].y + movey), duration=0.5, tween='linear')
-    	aliens[a].position = {x: aliens[a].position.x, y: aliens[a].position.y + movey};
-        if (randint(0, 1) === 0) {
-            aliens[a].sprite = sprites["alien1"];
-        }
-        else {
-            aliens[a].sprite = sprites["alien1b"];
-            if (randint(0, 5) === 0 ) {
-            	var laser = new Laser(sprites["laser1"], { x: aliens[a].position.x, y: aliens[a].position.y});
-            	laser.status = 0;
-            	laser.type = 0;
-                lasers.push(laser);
-            }
-        }
-        if (aliens[a].position.y > player.position.y && player.status === 0) {
-            player.status = 1;
-        }
-    }
-    moveSequence +=1;
-    if (moveSequence === 40)
-    	moveSequence = 0;
+	if (moveSequence < 10 || moveSequence > 30) {
+		movex = -ALIEN_SPEEDX;
+	}
+	if (moveSequence >10 && moveSequence < 30) {
+		movex = ALIEN_SPEEDX;
+	}
+	moveCounter += 1;
+	if (moveCounter < moveDelay) { 
+		// update only pos x
+		for (var a=0; a<aliens.length; ++a) {
+			aliens[a].position.x += movex;
+		}
+	}
+	else { // 0.5 sec period
+		// update pos (x,y)
+		moveCounter = 0;    
+		movey = 0;
+		if (moveSequence === 10 || moveSequence === 30) {
+			movey = 50 + (10 * DIFFICULTY);
+			moveDelay -= 1;
+		}
+		for (var a=0; a<aliens.length; ++a) {
+			aliens[a].position = {x: aliens[a].position.x, y: aliens[a].position.y + movey};
+			if (randint(0, 1) === 0) {
+				aliens[a].sprite = sprites["alien1"];
+			}
+			else {
+				aliens[a].sprite = sprites["alien1b"];
+				if (randint(0, 5) === 0 ) {
+					var laser = new Laser(sprites["laser1"], { x: aliens[a].position.x, y: aliens[a].position.y});
+					laser.status = 0;
+					laser.type = 0;
+					lasers.push(laser);
+				}
+			}
+			if (aliens[a].position.y > player.position.y && player.status === 0) {
+				player.status = 1;
+			}
+		}
+		moveSequence +=1;
+		if (moveSequence === 40)
+			moveSequence = 0;
+	}
 }
 
 function handleKeyDown(evt) {
-    keyDown = evt.keyCode;
+	if (evt.repeat !== undefined) {
+		if (evt.keyCode !== -1)
+			keyDown = evt.keyCode;
+	}
 }
 
 function handleKeyUp(evt) {

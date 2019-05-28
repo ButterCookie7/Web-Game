@@ -64,6 +64,8 @@ function Player() {
 	this.status = 0;
 	this.laserCountdown = 0;
 	this.laserActive = 1;
+	this.lives = 3;
+	this.name = "";
 	
 	this.position = { x : 400, y : 550 };
 	this.size = { x : playerSprites[0].width, y : playerSprites[0].height };
@@ -78,9 +80,27 @@ function Player() {
 	};
 
 }
-function Boss() {
-	
+function Boss(sprite, pos) {
+	this.sprite = sprite;
+    this.position = pos;
+    this.status = 0;
+    this.type = 1;
+    this.active = false;
+    
+	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
+	this.draw = function () {
+		drawImage(this.sprite, this.position, 0, this.center);
+	};
 }
+function Life(sprite, pos) {
+	this.sprite = sprite;
+    this.position = pos;
+	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
+	this.draw = function () {
+		drawImage(this.sprite, this.position, 0, this.center);
+	};
+}
+
 function Sound(sound) {
 	this.sound = new Audio();
 	this.sound.src = sound;
@@ -101,10 +121,11 @@ var sounds = {};
 
 var gameStatus = 0;
 var highScore = [];
-
+var level = 1;
 var player;
 var aliens = [];
 var bases = [];
+var boss;
 
 var lasers = [];
 var moveCounter = 0;
@@ -153,38 +174,35 @@ function draw() {
 	
     if (gameStatus === 0) {
     	// display the title page
-    	drawText('textArea', "PYGAME ZERO INVADERS<br><br><br>Type your name then<br>press Enter to start<br>(arrow keys move, space to fire)");
+    	drawText('textArea', "HUFS CES INVADERS<br><br><br>Type your name then<br>"
+    			+"press Enter to start<br>(arrow keys move, space to fire)");
     }
+    if (gameStatus === 1) {
+    	player.draw();
 
-	player.draw();
+    	drawLasers();
+    	drawAliens();
+    	drawBases();
 
-	drawLasers();
-	drawAliens();
-	drawBases();
-
-	drawText('scoreArea', score);
-
-	if (player.status >= 30) {
-		drawText('textArea', "GAME OVER<br>Press Enter to play again");
-	}
-	if (aliens.length === 0) {
-		drawText('textArea', "YOU WON!<br>Press Enter to play again");
-	}
-}
-
-function update() {
-    if (player.status < 30 && aliens.length > 0) {
-        checkKeys();
-        checkBases();
-        updateLasers();
-        updateAliens();
-        if (player.status > 0) {
-        	player.status += 1;
-        } 
+    	drawText('scoreArea', score);
+    	drawText('levelArea', "LEVEL " + level);
+    	drawLives();
+    	
+    	if (player.status >= 30) {
+    		if (player.lives > 0) {
+    			drawText('textArea', "YOU WERE HIT!<br>Press Enter to re-spawn");
+    		}
+    		else {
+    			drawText('textArea', "GAME OVER!<br>Press Enter to continue");
+    		}
+    	}
+    	if (aliens.length === 0) {
+    		drawText('textArea', "LEVEL CLEARED!<br>Press Enter to go to the next level");
+    	}
     }
-    else {
-        if (keyDown === Keys.enter) 
-        	initialize();
+    if (gameStatus === 2) {
+    	// game over show the leaderboard
+    	drawHighScore()
     }
 }
 
@@ -203,6 +221,78 @@ function drawLasers() {
     for (var l=0; l<lasers.length; ++l) {
     	lasers[l].draw()
     }
+}
+
+function drawLives() {
+	
+}
+function drawHighScore() {
+    drawText('topScoreArea', "TOP SCORES");
+    var topList = '';
+    for (var y = 0; y < highScore.length; ++y) {
+    	var line = highScore[y];
+        if (y < 400) {
+        	topList += (line + '<br>');
+        }
+    }
+	drawText('topListArea', topList);
+
+	drawText("footArea", "Press Escape to play again");
+}
+
+function update() {
+
+	if (gameStatus === 0) {
+		if (keyDown === Keys.enter && player.name != "") {
+			gameStatus = 1;
+		}
+		else if (keyDown >= Keys.multiply && keyDown <= Keys.Z) {
+			player.name += String.fromCharCode(keyDown);
+		}
+		else if (keyDown === Keys.back) {
+			player.name = player.name.slice(-1);
+		}
+	}
+	if (gameStatus === 1) {
+		if (player.status < 30 && aliens.length > 0) {
+			checkKeys();
+			checkBases();
+			updateLasers();
+			updateBoss();
+			updateAliens();
+			if (player.status > 0) {
+				player.status += 1;
+                if (player.status === 30) {
+                    player.lives -= 1;
+                }
+			} 
+		}
+		else {
+			if (keyDown === Keys.enter) {
+				if (player.lives > 0) {
+                    player.status = 0;
+                    lasers = [];
+                    if (aliens.length === 0) {
+                        level += 1;
+                        boss.active = false;
+                        initAliens();
+                        initBases();
+                    }
+				}
+				else {
+                    readHighScore();
+                    gameStatus = 2;
+                    writeHighScore();
+				}
+			}
+		}
+	}
+	if (gameStatus === 2) {
+		if (keyDown === Keys.escape) {
+			initialize();
+			gameStatus = 0;
+		}
+	}
 }
 
 function checkKeys() {
@@ -256,6 +346,7 @@ function listCleanup(li) {
 
 function checkLaserHit(l) {
     if (player.contains({x: lasers[l].position.x, y: lasers[l].position.y+lasers[l].center.y})) {
+    	sounds["explosion"].play();
         player.status = 1;
         lasers[l].status = 1;
     }
@@ -335,9 +426,11 @@ function updateAliens() {
 					laser.status = 0;
 					laser.type = 0;
 					lasers.push(laser);
+					sounds["laser"].play();
 				}
 			}
-			if (aliens[a].position.y > player.position.y && player.status === 0) {
+			if (aliens[a].position.y > 500 && player.status === 0) {
+				sounds["explosion"].play();
 				player.status = 1;
 			}
 		}
@@ -346,7 +439,9 @@ function updateAliens() {
 			moveSequence = 0;
 	}
 }
-
+function updateBoss() {
+	
+}
 function handleKeyDown(evt) {
 	if (evt.repeat !== undefined) {
 		if (evt.keyCode !== -1)

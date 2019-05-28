@@ -20,6 +20,22 @@
       font-size: xx-large;
 	  font-weight: bold;
     }
+    .levelText {
+      color: #0040ff;
+      width: 800px;
+      -webkit-text-stroke: 1px white;
+      text-align: center;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
+    .topText {
+      color: #0040ff;
+      width: 400px;
+      -webkit-text-stroke: 1px white;
+      text-align: left;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
     #gamepan {
       background-color: #1e0a1e;
       position: absolute;
@@ -33,10 +49,35 @@
       top: 10px;      
       padding: 0px 0px;
     }
+    #levelArea {
+      position: absolute;
+      left: 0px;
+      top: 10px;      
+      padding: 0px 0px;
+    }
+    #topScoreArea {
+      position: absolute;
+      left: 400px;
+      top: 30px;      
+      padding: 0px 0px;
+    }
+    #topListArea {
+      position: absolute;
+      left: 400px;
+      top: 100px;      
+      padding: 0px 0px;
+      font-size: x-large;
+    }
     #textArea {
       position: absolute;
       left: 0px;
       top: 250px;      
+      padding: 0px 0px;
+    }
+    #footArea {
+      position: absolute;
+      left: 0px;
+      top: 550px;      
       padding: 0px 0px;
     }
   </style>
@@ -49,6 +90,10 @@
   </canvas>
   <div id="textArea" class="baseText"></div>
   <div id="scoreArea" class="scoreText"></div>
+  <div id="levelArea" class="levelText"></div>
+  <div id="topScoreArea" class="topText"></div>
+  <div id="topListArea" class="topText"></div>
+  <div id="footArea" class="baseText"></div>
 </div>
 
 </body>

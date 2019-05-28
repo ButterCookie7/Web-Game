@@ -137,6 +137,8 @@ var score = 0;
 var movex = 0;
 var movey = 0;
 
+var topScoreList = undefined;
+
 window.requestAnimationFrame =  window.requestAnimationFrame ||
 								window.webkitRequestAnimationFrame ||
 								window.mozRequestAnimationFrame ||
@@ -246,7 +248,7 @@ function update() {
 		if (keyDown === Keys.enter && player.name != "") {
 			gameStatus = 1;
 		}
-		else if (keyDown >= Keys.multiply && keyDown <= Keys.Z) {
+		else if (keyDown >= Keys.space && keyDown <= Keys.Z) {
 			player.name += String.fromCharCode(keyDown);
 		}
 		else if (keyDown === Keys.back) {
@@ -293,6 +295,33 @@ function update() {
 			gameStatus = 0;
 		}
 	}
+}
+
+function loadFile(fileURL) {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("GET", fileURL);
+	xmlhttp.send();
+	xhr.onload = function() {
+		if (xhr.status != 200) {
+			topScoreList = xmlhttp.responseText;
+		}
+	};	
+}
+function readHighScore() {
+	highScore = [];
+	if (topScoreList) {
+		var scoreLine = topScoreList.split(/\r?\n/);
+		for (var i=0; i<scoreLine.length; ++i) {
+			highScore.push(scoreLine);
+		}
+	}
+	highScore.push(score + " " + player.name);
+	highScore.sort(function(sco1, sco2){
+		var isco1 = parseInt(sco1.substring(0, sco1.indexOf(" ")));
+		var isco2 = parseInt(sco2.substring(0, sco2.indexOf(" ")));
+		return isco1 - isco2;
+	});
+	highScore.reverse();
 }
 
 function checkKeys() {

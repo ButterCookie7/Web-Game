@@ -28,11 +28,27 @@
       font-size: xx-large;
 	  font-weight: bold;
     }
-    .topText {
+    .topScoreText {
       color: #0040ff;
-      width: 400px;
+      width: 800px;
       -webkit-text-stroke: 1px white;
-      text-align: left;
+      text-align: center;
+      font-size: xx-large;
+	  font-weight: bold;
+    }
+    .topListText {
+      color: #ffff00;
+      width: 800px;
+      -webkit-text-stroke: 1px #0000ff;
+      text-align: center;
+      font-size: x-large;
+	  font-weight: bold;
+    }
+    .nameText {
+      color: #0040ff;
+      width: 800px;
+      -webkit-text-stroke: 1px #ff0000;
+      text-align: center;
       font-size: xx-large;
 	  font-weight: bold;
     }
@@ -57,21 +73,26 @@
     }
     #topScoreArea {
       position: absolute;
-      left: 400px;
+      left: 0px;
       top: 30px;      
       padding: 0px 0px;
     }
     #topListArea {
       position: absolute;
-      left: 400px;
+      left: 0px;
       top: 100px;      
       padding: 0px 0px;
-      font-size: x-large;
     }
     #textArea {
       position: absolute;
       left: 0px;
       top: 250px;      
+      padding: 0px 0px;
+    }
+    #nameArea {
+      position: absolute;
+      left: 0px;
+      top: 500px;      
       padding: 0px 0px;
     }
     #footArea {
@@ -91,8 +112,9 @@
   <div id="textArea" class="baseText"></div>
   <div id="scoreArea" class="scoreText"></div>
   <div id="levelArea" class="levelText"></div>
-  <div id="topScoreArea" class="topText"></div>
-  <div id="topListArea" class="topText"></div>
+  <div id="topScoreArea" class="topScoreText"></div>
+  <div id="topListArea" class="topListText"></div>
+  <div id="nameArea" class="nameText"></div>
   <div id="footArea" class="baseText"></div>
 </div>
 

@@ -3,6 +3,9 @@ const ZERO_POS = { x : 0, y : 0 };
 const FPS = 60;
 const DIFFICULTY = 1
 const ALIEN_SPEEDX = 0.5;
+const LIVES_MAX = 3;
+const TOUCH_LINE = 500;
+
 var canvas;
 var canvasContext;
 
@@ -64,7 +67,7 @@ function Player() {
 	this.status = 0;
 	this.laserCountdown = 0;
 	this.laserActive = 1;
-	this.lives = 3;
+	this.lives = LIVES_MAX;
 	this.name = "";
 	
 	this.position = { x : 400, y : 550 };
@@ -83,13 +86,16 @@ function Player() {
 function Boss(sprite, pos) {
 	this.sprite = sprite;
     this.position = pos;
-    this.status = 0;
-    this.type = 1;
     this.active = false;
+    this.direction = 0;
     
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
 		drawImage(this.sprite, this.position, 0, this.center);
+	};
+	this.contains = function(p1) {
+		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
+		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
 	};
 }
 function Life(sprite, pos) {
@@ -97,7 +103,7 @@ function Life(sprite, pos) {
     this.position = pos;
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
-		drawImage(this.sprite, this.position, 0, this.center);
+		drawImage(this.sprite, this.position, 0, ZERO_POS);
 	};
 }
 
@@ -126,6 +132,7 @@ var player;
 var aliens = [];
 var bases = [];
 var boss;
+var lives = [];
 
 var lasers = [];
 var moveCounter = 0;
@@ -166,6 +173,12 @@ function drawText(textId, textStr) {
 }
 function clearTexts() {
 	drawText('textArea', '');
+	drawText('scoreArea', '');
+	drawText('levelArea', '');
+	drawText('topScoreArea', '');
+	drawText('topListArea', '');
+	drawText('nameArea', '');
+	drawText('footArea', '');
 }
 
 function draw() {
@@ -178,10 +191,13 @@ function draw() {
     	// display the title page
     	drawText('textArea', "HUFS CES INVADERS<br><br><br>Type your name then<br>"
     			+"press Enter to start<br>(arrow keys move, space to fire)");
+    	drawText('nameArea', player.name);
     }
     if (gameStatus === 1) {
     	player.draw();
 
+    	if (boss.active)
+    		boss.draw();
     	drawLasers();
     	drawAliens();
     	drawBases();
@@ -221,15 +237,18 @@ function drawBases() {
 
 function drawLasers() {
     for (var l=0; l<lasers.length; ++l) {
-    	lasers[l].draw()
+    	lasers[l].draw();
     }
 }
 
 function drawLives() {
-	
+	for (var i=0; i<player.lives; ++i) {
+		lives[i].draw();
+	}
 }
 function drawHighScore() {
-    drawText('topScoreArea', "TOP SCORES");
+	clearTexts();
+	drawText('topScoreArea', "TOP SCORES");
     var topList = '';
     for (var y = 0; y < highScore.length; ++y) {
     	var line = highScore[y];
@@ -247,12 +266,6 @@ function update() {
 	if (gameStatus === 0) {
 		if (keyDown === Keys.enter && player.name != "") {
 			gameStatus = 1;
-		}
-		else if (keyDown >= Keys.space && keyDown <= Keys.Z) {
-			player.name += String.fromCharCode(keyDown);
-		}
-		else if (keyDown === Keys.back) {
-			player.name = player.name.slice(-1);
 		}
 	}
 	if (gameStatus === 1) {
@@ -284,7 +297,6 @@ function update() {
 				else {
                     readHighScore();
                     gameStatus = 2;
-                    writeHighScore();
 				}
 			}
 		}
@@ -297,24 +309,7 @@ function update() {
 	}
 }
 
-function loadFile(fileURL) {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.open("GET", fileURL);
-	xmlhttp.send();
-	xhr.onload = function() {
-		if (xhr.status != 200) {
-			topScoreList = xmlhttp.responseText;
-		}
-	};	
-}
 function readHighScore() {
-	highScore = [];
-	if (topScoreList) {
-		var scoreLine = topScoreList.split(/\r?\n/);
-		for (var i=0; i<scoreLine.length; ++i) {
-			highScore.push(scoreLine);
-		}
-	}
 	highScore.push(score + " " + player.name);
 	highScore.sort(function(sco1, sco2){
 		var isco1 = parseInt(sco1.substring(0, sco1.indexOf(" ")));
@@ -400,6 +395,13 @@ function checkPlayerLaserHit(l) {
             score += 1000;
         }
     }
+    if (boss.active) {
+        if (boss.contains({ x: lasers[l].position.x, y: lasers[l].position.y-lasers[l].center.y})) {
+            lasers[l].status = 1;
+            boss.active = false;
+            score += 5000;
+        }
+    }
 }
 
 function updateLasers() {
@@ -407,7 +409,7 @@ function updateLasers() {
         if (lasers[l].type === 0) {
             lasers[l].position.y += (2*DIFFICULTY);
             checkLaserHit(l);
-            if (lasers[l].position.y > 600)
+            if (lasers[l].position.y > TOUCH_LINE+100)
             	lasers[l].status = 1;
         }
         if (lasers[l].type === 1) {
@@ -458,7 +460,7 @@ function updateAliens() {
 					sounds["laser"].play();
 				}
 			}
-			if (aliens[a].position.y > 500 && player.status === 0) {
+			if (aliens[a].position.y > TOUCH_LINE && player.status === 0) {
 				sounds["explosion"].play();
 				player.status = 1;
 			}
@@ -468,13 +470,52 @@ function updateAliens() {
 			moveSequence = 0;
 	}
 }
+
 function updateBoss() {
-	
+    if (boss.active) {
+        boss.position.y += (0.3*level);
+        if (boss.direction === 0)
+        	boss.position.x -= (1* level);
+        else
+        	boss.position.x += (1* level);
+        if (boss.position.x < 100)
+        	boss.direction = 1;
+        if (boss.position.x > 700)
+        	boss.direction = 0;
+        if (boss.position.y > TOUCH_LINE) {
+            sounds["explosion"].play();
+            player.status = 1;
+            boss.active = false;
+        }
+        if (randint(0, 30) === 0) {
+        	var laser = new Laser(sprites["laser1"], { x: boss.position.x, y: boss.position.y})
+            laser.status = 0;
+            laser.type = 0;
+            lasers.push(laser);
+        }
+    }
+    else {
+        if (randint(0, 800) == 0) {
+            boss.active = true;
+            boss.position.x = 800;
+            boss.position.y = 100;
+            boss.direction = 0;
+        }
+    }
 }
+
 function handleKeyDown(evt) {
 	if (evt.repeat !== undefined) {
 		if (evt.keyCode !== -1)
 			keyDown = evt.keyCode;
+	}
+	if (gameStatus === 0) {
+		if (keyDown >= Keys.space && keyDown <= Keys.Z) {
+			player.name += String.fromCharCode(keyDown);
+		}
+		else if (keyDown === Keys.back) {
+			player.name = player.name.slice(-1);
+		}
 	}
 }
 
@@ -568,6 +609,12 @@ function initialize() {
 	player.laserActive = 1;
 	player.laserCountdown = 0;
 	
+	boss = new Boss(sprites["boss"], ZERO_POS);
+	boss.active = false;
+	
+	for (var i=0; i<LIVES_MAX; ++i) {
+		lives.push(new Life(sprites["life"], {x: 10+(i*32), y: 10}));
+	}
 	// mouse initialize
     //document.onmousedown = handleMouseDown;
     //document.onmouseup = handleMouseUp;

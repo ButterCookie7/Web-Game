@@ -189,7 +189,7 @@ function draw() {
 	
     if (gameStatus === 0) {
     	// display the title page
-    	drawText('textArea', "HUFS CES INVADERS<br><br><br>Type your name then<br>"
+    	drawText('textArea', "PYGAME ZERO INVADERS<br><br><br>Type your name then<br>"
     			+"press Enter to start<br>(arrow keys move, space to fire)");
     	drawText('nameArea', player.name);
     }

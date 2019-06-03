@@ -69,7 +69,7 @@ function Player(sprite, pos) {
 	
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
-		drawImage(this.sprite, this.position, this.angle, this.center);
+		drawImage(this.sprite, this.position, this.angle*Math.PI/180, this.center);
 	};
 	this.contains = function(p1) {
 		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
@@ -103,6 +103,9 @@ var ghosts = [];
 var moveGhostsFlag = 4;
 var moveDelay = FPS/SPEED;
 var moveCount = 0;
+
+var playerMoveX = 0;
+var playerMoveY = 0;
 
 var score = 0;
 
@@ -190,14 +193,23 @@ function update() {
 			if (player.inputActive) {
 				checkInput();
 				checkMovePoint(player);
-				if (player.movex || player.movey) {
-					//inputLock();
+				console.log("player.inputActive", playerMoveX, playerMoveY);
+				if (playerMoveX > 0 || playerMoveY > 0) {
+					inputLock();
 					//animate(player, 
 					//pos=(player.x + player.movex, player.y + player.movey), 
 					//duration=1/SPEED, tween='linear', on_finished=inputUnLock)
-					player.position.x += player.movex;
-					player.position.y += player.movey;
-					//inputUnLock();
+					if (playerMoveX > 0) {
+						player.position.x += player.movex;
+						playerMoveX -= 1;
+					}
+					if (playerMoveY > 0) {
+						player.position.y += player.movey;
+						playerMoveY -= 1;
+					}
+				}
+				else {
+					inputUnLock();
 				}
 			} 
 		}
@@ -365,19 +377,23 @@ function checkInput() {
 	switch (keyDown) {
 	case Keys.left:
 		player.angle = 180;
-		player.movex = -MOVE_SPEED;
+		player.movex = -1;
+		playerMoveX = 20;
 		break;
 	case Keys.right:
 		player.angle = 0;
-		player.movex = MOVE_SPEED;
+		player.movex = 1;
+		playerMoveX = 20;
 		break;
 	case Keys.up:
-		player.angle = 90;
-		player.movey = -MOVE_SPEED;
+		player.angle = 270;
+		player.movey = -1;
+		playerMoveY = 20;
 		break;
 	case Keys.down:
-		player.angle = 270;
-		player.movey = MOVE_SPEED;
+		player.angle = 90;
+		player.movey = 1;
+		playerMoveY = 20;
 		break;
 	}
 }
@@ -387,9 +403,12 @@ function checkMovePoint(p) {
     	p.position.x = p.position.x+600;
     if (p.position.x+p.movex > 600)
     	p.position.x = p.position.x-600;
-    if (!isImageDataBlack(movemap, p.position.x+p.movex, p.position.y+p.movey-80)) {
+    console.log("checkMovePoint=", p.position.x+p.movex*20, p.position.y+p.movey*20-80);
+    if (!isImageDataBlack(movemap, p.position.x+p.movex*20, p.position.y+p.movey*20-80)) {
         p.movex = 0;
         p.movey = 0;
+        playerMoveX = 0;
+        playerMoveY = 0;
     }
 }
 

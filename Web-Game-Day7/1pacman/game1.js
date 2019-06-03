@@ -69,7 +69,7 @@ function Player(sprite, pos) {
 	
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
-		drawImage(this.sprite, this.position, 0, this.center);
+		drawImage(this.sprite, this.position, this.angle, this.center);
 	};
 	this.contains = function(p1) {
 		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x

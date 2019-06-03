@@ -2,7 +2,7 @@
 const ZERO_POS = { x : 0, y : 0 };
 const FPS = 60;
 const SPEED = 3;
-const GHOST_SPEED = 1;
+const MOVE_SPEED = 1;
 const WIDTH = 600
 const HEIGHT = 580
 
@@ -191,13 +191,13 @@ function update() {
 				checkInput();
 				checkMovePoint(player);
 				if (player.movex || player.movey) {
-					inputLock();
+					//inputLock();
 					//animate(player, 
 					//pos=(player.x + player.movex, player.y + player.movey), 
 					//duration=1/SPEED, tween='linear', on_finished=inputUnLock)
-					player.x += player.movex;
-					player.y += player.movey;
-					inputUnLock();
+					player.position.x += player.movex;
+					player.position.y += player.movey;
+					//inputUnLock();
 				}
 			} 
 		}
@@ -244,8 +244,8 @@ function moveGhosts() {
 	moveGhostsFlag = 0;
     for (var g=0; g<ghosts.length; ++g) {
         var dirs = getPossibleDirection(ghosts[g]);
-        console.log("g=", g, "dirs=", dirs);
-        console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir]);
+        //console.log("g=", g, "dirs=", dirs);
+        //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir]);
         if (ghosts[g].ghostCollided() && randint(0,3) === 0)
         	ghosts[g].dir = 3;
         if (dirs[ghosts[g].dir] === 0 || randint(0,50) === 0) {
@@ -261,8 +261,8 @@ function moveGhosts() {
 		//animate(ghosts[g], 
 		//pos=(ghosts[g].x + dmoves[ghosts[g].dir][0]*20, ghosts[g].y + dmoves[ghosts[g].dir][1]*20), 
 		//duration=1/SPEED, tween='linear', on_finished=flagMoveGhosts)
-		ghosts[g].position.x += dmoves[ghosts[g].dir][0]*GHOST_SPEED;
-		ghosts[g].position.y += dmoves[ghosts[g].dir][1]*GHOST_SPEED;
+		ghosts[g].position.x += dmoves[ghosts[g].dir][0]*MOVE_SPEED;
+		ghosts[g].position.y += dmoves[ghosts[g].dir][1]*MOVE_SPEED;
         flagMoveGhosts();
     }
 }
@@ -365,19 +365,19 @@ function checkInput() {
 	switch (keyDown) {
 	case Keys.left:
 		player.angle = 180;
-		player.movex = -20;
+		player.movex = -MOVE_SPEED;
 		break;
 	case Keys.right:
 		player.angle = 0;
-		player.movex = 20;
+		player.movex = MOVE_SPEED;
 		break;
 	case Keys.up:
 		player.angle = 90;
-		player.movex = -20;
+		player.movey = -MOVE_SPEED;
 		break;
 	case Keys.down:
 		player.angle = 270;
-		player.movex = 20;
+		player.movey = MOVE_SPEED;
 		break;
 	}
 }

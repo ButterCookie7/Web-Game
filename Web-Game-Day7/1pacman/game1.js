@@ -35,7 +35,7 @@ function Ghost(sprite, pos) {
 	};
 	this.ghostCollided = function() {
         for (var g=0; g<ghosts.length; ++g) {
-            if (ghosts[g]===this && ghosts[g].colliderect(this))
+            if (ghosts[g]!==this && ghosts[g].colliderect(this))
                 return true;
         }
         return false;
@@ -62,7 +62,6 @@ function Player(sprite, pos) {
 	this.sprite = sprite;
     this.position = pos;
 	this.status = 0;
-	this.inputActive = false;
 	this.movex = 0;
 	this.movey = 0;
 	this.angle = 0;
@@ -100,12 +99,8 @@ var player;
 var pacDots = [];
 var ghosts = [];
 
-var moveGhostsFlag = 4;
 var moveDelay = FPS/SPEED;
 var moveCount = 0;
-
-var playerMoveX = 0;
-var playerMoveY = 0;
 
 var score = 0;
 
@@ -179,47 +174,52 @@ function draw() {
 }
 function update() {
 	if (player.status === 0) {
-		moveCount +=1;
-		if (moveCount < moveDelay) { // every FPS cycle
-			if (moveGhostsFlag === 4) {
-				moveGhosts();
-			}
+		//console.log("update moveGhostsFlag=", moveGhostsFlag, "moveCount=", moveCount);
+		if (moveCount <= moveDelay) { // every FPS cycle
+			updateGhosts();
 			for (var g=0; g<ghosts.length; ++g) {
 				if (ghosts[g].contains({x:player.position.x, y:player.position.y})) {
-					console.log('g=',g, "x,y=", player.position.x, player.position.y);
+					console.log('GAME OVER g=',g, "x,y=", player.position.x, player.position.y);
 					player.status = 1;
 				}
 			}
-			if (player.inputActive) {
-				checkInput();
-				checkMovePoint(player);
-				console.log("player.inputActive", playerMoveX, playerMoveY);
-				if (playerMoveX > 0 || playerMoveY > 0) {
-					inputLock();
-					//animate(player, 
-					//pos=(player.x + player.movex, player.y + player.movey), 
-					//duration=1/SPEED, tween='linear', on_finished=inputUnLock)
-					if (playerMoveX > 0) {
-						player.position.x += player.movex;
-						playerMoveX -= 1;
-					}
-					if (playerMoveY > 0) {
-						player.position.y += player.movey;
-						playerMoveY -= 1;
-					}
-				}
-				else {
-					inputUnLock();
-				}
-			} 
+			//animate(player, 
+			//pos=(player.x + player.movex, player.y + player.movey), 
+			//duration=1/SPEED, tween='linear', on_finished=inputUnLock)
+			if (player.movex !== 0 || player.movey !== 0) {
+				//inputLock();
+				player.position.x += player.movex;
+				player.position.y += player.movey;
+			}
 		}
 		else { // 1/3 sec period
-			console.log("moveGhostsFlag=", moveGhostsFlag);
 			moveCount = 0;
+			inputUnLock();
+			checkInput();
+			//if (player.movex !== 0 || player.movey !== 0)
+			//	console.log("checkInput move x,y=", player.movex, player.movey);
+			checkMovePoint(player);
+			//if (player.movex !== 0 || player.movey !== 0)
+			//console.log("checkMovePoint move x,y=", player.movex, player.movey, 
+			//		"pos=",player.position);
+			moveGhosts();
 		}
+		moveCount +=1;
 	}
 }
+var dmoves = [[1,0],[0,1],[-1,0],[0,-1]];
+//             -->    v    <--     ^
+function updateGhosts() {
+    for (var g=0; g<ghosts.length; ++g) {
+		ghosts[g].position.x += dmoves[ghosts[g].dir][0]*MOVE_SPEED;
+		ghosts[g].position.y += dmoves[ghosts[g].dir][1]*MOVE_SPEED;
+    }
+}
 function getPlayerImage() {
+	if (player.status !== 0) {
+		player.sprite = sprites["pacman_o"];
+		return;
+	}
     var dt = new Date().getTime() * 1000; // micro seconds
     var a = player.angle;
     var tc = dt % (500000/SPEED) / (100000/SPEED);
@@ -250,15 +250,19 @@ function drawGhosts() {
     	ghosts[g].draw();
     }
 }
-var dmoves = [[1,0],[0,1],[-1,0],[0,-1]];
+
 function moveGhosts() {
-	console.log('moveGhosts', 'moveGhostsFlag=',moveGhostsFlag);
+	//console.log('moveGhosts', 'moveGhostsFlag=',moveGhostsFlag);
 	moveGhostsFlag = 0;
     for (var g=0; g<ghosts.length; ++g) {
         var dirs = getPossibleDirection(ghosts[g]);
         //console.log("g=", g, "dirs=", dirs);
         //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir]);
-        if (ghosts[g].ghostCollided() && randint(0,3) === 0)
+        //console.log("g=",g, " ghostCollided=",ghosts[g].ghostCollided());
+        //console.log("ghosts[g].dir=", ghosts[g].dir, " ghost pos=",ghosts[g].position);
+        if (ghosts[g].ghostCollided() 
+        		&& 280 <= ghosts[g].position.x && ghosts[g].position.x <= 320
+        		&& 340 <= ghosts[g].position.y && ghosts[g].position.y <= 400)
         	ghosts[g].dir = 3;
         if (dirs[ghosts[g].dir] === 0 || randint(0,50) === 0) {
             var d = -1;
@@ -267,22 +271,14 @@ function moveGhosts() {
                 if (dirs[rd] === 1)
                     d = rd;
             }
-            console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir], "d=", d);
+            //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir], "d=", d);
             ghosts[g].dir = d;
         }
 		//animate(ghosts[g], 
 		//pos=(ghosts[g].x + dmoves[ghosts[g].dir][0]*20, ghosts[g].y + dmoves[ghosts[g].dir][1]*20), 
 		//duration=1/SPEED, tween='linear', on_finished=flagMoveGhosts)
-		ghosts[g].position.x += dmoves[ghosts[g].dir][0]*MOVE_SPEED;
-		ghosts[g].position.y += dmoves[ghosts[g].dir][1]*MOVE_SPEED;
-        flagMoveGhosts();
     }
 }
-function flagMoveGhosts() {
-    moveGhostsFlag += 1;
-}
-
-
 function handleKeyDown(evt) {
 	if (evt.repeat !== undefined) {
 		if (evt.keyCode !== -1)
@@ -364,12 +360,10 @@ function initGhosts() {
 }
 
 function inputLock() {
-    player.inputActive = false;
 }
 function inputUnLock() {
     player.movex = 0;
     player.movey = 0;
-    player.inputActive = true;
 }
 
 function checkInput() {
@@ -378,32 +372,29 @@ function checkInput() {
 	case Keys.left:
 		player.angle = 180;
 		player.movex = -1;
-		playerMoveX = 20;
 		break;
 	case Keys.right:
 		player.angle = 0;
 		player.movex = 1;
-		playerMoveX = 20;
 		break;
 	case Keys.up:
 		player.angle = 270;
 		player.movey = -1;
-		playerMoveY = 20;
 		break;
 	case Keys.down:
 		player.angle = 90;
 		player.movey = 1;
-		playerMoveY = 20;
 		break;
 	}
 }
 
 function checkMovePoint(p) {
-    if (p.position.x+p.movex < 0)
+    if (p.position.x+p.movex*20 < 0)
     	p.position.x = p.position.x+600;
-    if (p.position.x+p.movex > 600)
+    if (p.position.x+p.movex*20 > 600)
     	p.position.x = p.position.x-600;
-    console.log("checkMovePoint=", p.position.x+p.movex*20, p.position.y+p.movey*20-80);
+    //console.log("checkMovePoint=", p.position.x+p.movex*20, p.position.y+p.movey*20-80,
+    //		isImageDataBlack(movemap, p.position.x+p.movex*20, p.position.y+p.movey*20-80));
     if (!isImageDataBlack(movemap, p.position.x+p.movex*20, p.position.y+p.movey*20-80)) {
         p.movex = 0;
         p.movey = 0;
@@ -441,8 +432,8 @@ function getPossibleDirection(g) {
 
 function initialize() {
 	
-	console.log('dotmap =',dotmap);
-	console.log('movemap =',movemap);
+	//console.log('dotmap =',dotmap);
+	//console.log('movemap =',movemap);
 	initDots();
 	initGhosts();
 	

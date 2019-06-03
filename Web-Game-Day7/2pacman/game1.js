@@ -1,8 +1,11 @@
 
 const ZERO_POS = { x : 0, y : 0 };
 const FPS = 60;
-const DIFFICULTY = 1
-const ALIEN_SPEEDX = 0.5;
+const SPEED = 3;
+const MOVE_SPEED = 1;
+const WIDTH = 600
+const HEIGHT = 580
+
 var canvas;
 var canvasContext;
 
@@ -13,64 +16,59 @@ function randint(st, end) {
 	return Math.floor(Math.random() * (end-st+1) + st);
 }
 
-function Alien(sprite, pos) {
+function Ghost(sprite, pos) {
 	this.sprite = sprite;
 	this.position = pos;
+	this.dir = randint(0,3);
+	
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.contains = function(p1) {
 		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
 		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
 	};
+	this.colliderect = function(target) {
+		var targetX = target.position.x + target.center.x;
+		var targetY = target.position.y + target.center.y;
+		var distX = Math.abs(targetX - (this.position.x + this.center.x));
+		var distY = Math.abs(targetY - (this.position.y + this.center.y));
+		return distX < this.center.x && distY < this.center.y
+	};
+	this.ghostCollided = function() {
+        for (var g=0; g<ghosts.length; ++g) {
+            if (ghosts[g]!==this && ghosts[g].colliderect(this))
+                return true;
+        }
+        return false;
+	};
 	this.draw = function () {
 		drawImage(this.sprite, this.position, 0, this.center);
 	};
 }
-function Base(sprite, midbotPos) {
-	this.height = 60;
-	this.sprite = sprite;
-	this.position = midbotPos;
-	this.center = { x : this.sprite.width / 2, y : this.sprite.height };
-	this.collidepoint = function(p1) {
-		var dh = this.sprite.height - this.height;
-		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
-		&& this.position.y-this.center.y+dh < p1.y && p1.y < this.position.y+this.center.y;
-	};
-	this.contains = function(p1) {
-		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
-		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
-	};
-	this.drawClipped = function () {
-		// screen.surface.blit(self._surf, (self.x-32, self.y-self.height+30),(0,0,64,self.height))
-		var dh = this.sprite.height - this.height;
-		canvasContext.save();
-		canvasContext.translate(this.position.x, this.position.y);
-		canvasContext.drawImage(this.sprite, 0, 0, this.sprite.width, this.sprite.height,
-				-this.center.x, -this.center.y+dh, this.sprite.width, this.height);
-		canvasContext.restore();
-	};
-}
-function Laser(sprite, pos) {
+function Dot(sprite, pos) {
 	this.sprite = sprite;
     this.position = pos;
     this.status = 0;
-    this.type = 1;
     
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
+	this.contains = function(p1) {
+		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
+		&& this.position.y-this.center.y < p1.y && p1.y < this.position.y+this.center.y;
+	};
 	this.draw = function () {
 		drawImage(this.sprite, this.position, 0, this.center);
 	};
 }
-function Player() {
+function Player(sprite, pos) {
+	this.sprite = sprite;
+    this.position = pos;
 	this.status = 0;
-	this.laserCountdown = 0;
-	this.laserActive = 1;
+	this.movex = 0;
+	this.movey = 0;
+	this.angle = 0;
 	
-	this.position = { x : 400, y : 550 };
-	this.size = { x : playerSprites[0].width, y : playerSprites[0].height };
-	this.center = { x : playerSprites[0].width / 2, y : playerSprites[0].height / 2 };
-
+	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
-		drawImage(playerSprites[Math.floor(this.status/6)], this.position, 0, this.center);
+		drawImage(this.sprite, this.position, this.angle*Math.PI/180, this.center);
 	};
 	this.contains = function(p1) {
 		return this.position.x-this.center.x < p1.x && p1.x < this.position.x+this.center.x
@@ -98,18 +96,13 @@ var sprites = {};
 var sounds = {};
 
 var player;
-var aliens = [];
-var bases = [];
+var pacDots = [];
+var ghosts = [];
 
-var lasers = [];
-var moveCounter = 0;
-var moveSequence = 0;
-var moveDelay = FPS/2;;
+var moveDelay = FPS/SPEED;
+var moveCount = 0;
 
 var score = 0;
-
-var movex = 0;
-var movey = 0;
 
 window.requestAnimationFrame =  window.requestAnimationFrame ||
 								window.webkitRequestAnimationFrame ||
@@ -131,6 +124,7 @@ function drawImage (sprite, position, rotation, center) {
 			-center.x, -center.y, sprite.width, sprite.height);
 	canvasContext.restore();
 }
+
 function drawText(textId, textStr) {
 	var textArea = document.getElementById(textId)
 	textArea.innerHTML = textStr;
@@ -140,203 +134,151 @@ function clearTexts() {
 	drawText('textArea', '');
 }
 
+function isImageDataBlack(mapArray, x, y) {
+	var xp = Math.floor(x/20);
+	var yp = Math.floor(y/20);
+	//console.log('xp, yp=', xp, yp, 'mapArray[yp][xp]=',mapArray[yp][xp], mapArray[yp][xp]==='1');
+	return mapArray[yp][xp]==='1';
+}
+
 function draw() {
 
 	clearCanvas();
 	clearTexts();
-	drawImage(sprites['background'], ZERO_POS, 0, ZERO_POS);
+	drawImage(sprites['header'], ZERO_POS, 0, ZERO_POS);
+	drawImage(sprites['colourmap'], { x : 0, y : 80 }, 0, ZERO_POS);
 
-	player.draw();
+    var pacDotsLeft = 0;
+    for (var a=0; a<pacDots.length; ++a) {
+        if (pacDots[a].status === 0) {
+            pacDots[a].draw();
+            pacDotsLeft += 1;
+        }
+        if (pacDots[a].contains({ x:player.position.x, y:player.position.y })) {
+            pacDots[a].status = 1;
+        }
+    }
+    if (pacDotsLeft === 0)
+    	player.status = 2;
+    drawGhosts();
+    
+    getPlayerImage();
+    player.draw();
 
-	drawLasers();
-	drawAliens();
-	drawBases();
-
-	drawText('scoreArea', score);
-
-	if (player.status >= 30) {
-		drawText('textArea', "GAME OVER<br>Press Enter to play again");
+	if (player.status === 1) {
+		drawText('textArea', "GAME OVER");
 	}
-	if (aliens.length === 0) {
-		drawText('textArea', "YOU WON!<br>Press Enter to play again");
+	if (player.status === 2) {
+		drawText('textArea', "YOU WIN!");
 	}
 }
-
 function update() {
-    if (player.status < 30 && aliens.length > 0) {
-        checkKeys();
-        checkBases();
-        updateLasers();
-        updateAliens();
-        if (player.status > 0) {
-        	player.status += 1;
-        } 
-    }
-    else {
-        if (keyDown === Keys.enter) 
-        	initialize();
-    }
-}
-
-function drawAliens() {
-    for (var a=0; a<aliens.length; ++a)
-    	aliens[a].draw();
-}
-
-function drawBases() {
-    for (var b=0; b<bases.length; ++b) {
-    	bases[b].drawClipped()
-    }
-}
-
-function drawLasers() {
-    for (var l=0; l<lasers.length; ++l) {
-    	lasers[l].draw()
-    }
-}
-
-function checkKeys() {
-	
-	switch (keyDown) {
-	case Keys.left:
-		if (player.position.x > 40)
-			player.position.x -= 5;
-		break;
-	case Keys.right:
-		if (player.position.x < 760)
-			player.position.x += 5;
-		break;
-	case Keys.space:
-        if (player.laserActive === 1) {
-            player.laserActive = 0;
-            window.setTimeout(makeLaserActive, 1.0*1000);
-            l = lasers.length;
-            lasers.push(new Laser(sprites["laser2"], { x : player.position.x, y : player.position.y-32}));
-            lasers[l].status = 0;
-            lasers[l].type = 1;
-        }		
-	}
-}
-function makeLaserActive() {
-    player.laserActive = 1;
-}
-
-function checkBases() {
-	for (var b=0; b<bases.length; ++b) {
-		//console.log("bases[b].height=", bases[b].height, "bases.length", bases.length);
-        if (bases[b].height < 5) {
-        	// remove bases[b] from bases
-        	var ind = bases.indexOf(bases[b]);
-    		//console.log("ind=", ind, "bases.length", bases.length);
-        	if (ind !== -1) {
-        		bases.splice(ind, 1);
-        		//console.log("ind=", ind, "bases.length", bases.length);
-        	}
-        }
-	}
-}
-function listCleanup(li) {
-    var newList = [];
-    for (var i=0; i< li.length; ++i) {
-        if (li[i].status === 0)
-        	newList.push(li[i]);
-    }
-    return newList;
-}
-
-function checkLaserHit(l) {
-    if (player.contains({x: lasers[l].position.x, y: lasers[l].position.y+lasers[l].center.y})) {
-        player.status = 1;
-        lasers[l].status = 1;
-    }
-    for (var b=0; b<bases.length; ++b) {
-        if (bases[b].collidepoint({x: lasers[l].position.x, y: lasers[l].position.y+lasers[l].center.y})) {
-            bases[b].height -= 10;
-            lasers[l].status = 1;
-        }
-    }
-}
-
-function checkPlayerLaserHit(l) {
-    for (var b=0; b<bases.length; ++b) {
-        if (bases[b].contains(lasers[l].position)){
-        	lasers[l].status = 1;
-        }
-    }
-    for (var a=0; a<aliens.length; ++a) {
-        if (aliens[a].contains({ x: lasers[l].position.x, y: lasers[l].position.y-lasers[l].center.y})){
-            lasers[l].status = 1;
-            aliens[a].status = 1;
-            score += 1000;
-        }
-    }
-}
-
-function updateLasers() {
-	for (var l=0; l<lasers.length; ++l) {
-        if (lasers[l].type === 0) {
-            lasers[l].position.y += (2*DIFFICULTY);
-            checkLaserHit(l);
-            if (lasers[l].position.y > 600)
-            	lasers[l].status = 1;
-        }
-        if (lasers[l].type === 1) {
-            lasers[l].position.y -= 5;
-            checkPlayerLaserHit(l);
-            if (lasers[l].position.y < 10)
-            	lasers[l].status = 1;
-        }
-	}
-    lasers = listCleanup(lasers);
-    aliens = listCleanup(aliens);	
-}
-
-function updateAliens() {
-	if (moveSequence < 10 || moveSequence > 30) {
-		movex = -ALIEN_SPEEDX;
-	}
-	if (moveSequence >10 && moveSequence < 30) {
-		movex = ALIEN_SPEEDX;
-	}
-	moveCounter += 1;
-	if (moveCounter < moveDelay) { 
-		// update only pos x
-		for (var a=0; a<aliens.length; ++a) {
-			aliens[a].position.x += movex;
-		}
-	}
-	else { // 0.5 sec period
-		// update pos (x,y)
-		moveCounter = 0;    
-		movey = 0;
-		if (moveSequence === 10 || moveSequence === 30) {
-			movey = 50 + (10 * DIFFICULTY);
-			moveDelay -= 1;
-		}
-		for (var a=0; a<aliens.length; ++a) {
-			aliens[a].position = {x: aliens[a].position.x, y: aliens[a].position.y + movey};
-			if (randint(0, 1) === 0) {
-				aliens[a].sprite = sprites["alien1"];
-			}
-			else {
-				aliens[a].sprite = sprites["alien1b"];
-				if (randint(0, 5) === 0 ) {
-					var laser = new Laser(sprites["laser1"], { x: aliens[a].position.x, y: aliens[a].position.y});
-					laser.status = 0;
-					laser.type = 0;
-					lasers.push(laser);
+	if (player.status === 0) {
+		//console.log("update moveGhostsFlag=", moveGhostsFlag, "moveCount=", moveCount);
+		if (moveCount <= moveDelay) { // every FPS cycle
+			updateGhosts();
+			for (var g=0; g<ghosts.length; ++g) {
+				if (ghosts[g].contains({x:player.position.x, y:player.position.y})) {
+					console.log('GAME OVER g=',g, "x,y=", player.position.x, player.position.y);
+					player.status = 1;
 				}
 			}
-			if (aliens[a].position.y > player.position.y && player.status === 0) {
-				player.status = 1;
+			//animate(player, 
+			//pos=(player.x + player.movex, player.y + player.movey), 
+			//duration=1/SPEED, tween='linear', on_finished=inputUnLock)
+			if (player.movex !== 0 || player.movey !== 0) {
+				//inputLock();
+				player.position.x += player.movex;
+				player.position.y += player.movey;
 			}
 		}
-		moveSequence +=1;
-		if (moveSequence === 40)
-			moveSequence = 0;
+		else { // 1/3 sec period
+			moveCount = 0;
+			inputUnLock();
+			checkInput();
+			//if (player.movex !== 0 || player.movey !== 0)
+			//	console.log("checkInput move x,y=", player.movex, player.movey);
+			checkMovePoint(player);
+			//if (player.movex !== 0 || player.movey !== 0)
+			//console.log("checkMovePoint move x,y=", player.movex, player.movey, 
+			//		"pos=",player.position);
+			moveGhosts();
+		}
+		moveCount +=1;
 	}
 }
+var dmoves = [[1,0],[0,1],[-1,0],[0,-1]];
+//             -->    v    <--     ^
+function updateGhosts() {
+    for (var g=0; g<ghosts.length; ++g) {
+		ghosts[g].position.x += dmoves[ghosts[g].dir][0]*MOVE_SPEED;
+		ghosts[g].position.y += dmoves[ghosts[g].dir][1]*MOVE_SPEED;
+    }
+}
+function getPlayerImage() {
+	if (player.status !== 0) {
+		player.sprite = sprites["pacman_o"];
+		return;
+	}
+    var dt = new Date().getTime() * 1000; // micro seconds
+    var a = player.angle;
+    var tc = dt % (500000/SPEED) / (100000/SPEED);
+    //console.log("tc=", tc);
+    if (tc > 2.5 && (player.movex !== 0 || player.movey !== 0)) {
+        if (a !== 180)
+            player.sprite = sprites["pacman_c"];
+        else
+            player.sprite = sprites["pacman_cr"];
+    }
+    else {
+        if (a !== 180)
+            player.sprite = sprites["pacman_o"];
+        else
+            player.sprite = sprites["pacman_or"];
+    }
+}
 
+function drawGhosts() {
+    for (var g=0; g<ghosts.length; ++g) {
+    	//console.log('"ghost"+(g+1)', "ghost"+(g+1));
+    	if (ghosts[g].position.x > player.position.x) {
+    		ghosts[g].sprite = sprites["ghost"+(g+1)+"r"];
+    	}
+    	else {
+    		ghosts[g].sprite = sprites["ghost"+(g+1)];
+    	}
+    	ghosts[g].draw();
+    }
+}
+
+function moveGhosts() {
+	//console.log('moveGhosts', 'moveGhostsFlag=',moveGhostsFlag);
+	moveGhostsFlag = 0;
+    for (var g=0; g<ghosts.length; ++g) {
+        var dirs = getPossibleDirection(ghosts[g]);
+        //console.log("g=", g, "dirs=", dirs);
+        //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir]);
+        //console.log("g=",g, " ghostCollided=",ghosts[g].ghostCollided());
+        //console.log("ghosts[g].dir=", ghosts[g].dir, " ghost pos=",ghosts[g].position);
+        if (ghosts[g].ghostCollided() 
+        		&& 280 <= ghosts[g].position.x && ghosts[g].position.x <= 320
+        		&& 340 <= ghosts[g].position.y && ghosts[g].position.y <= 400)
+        	ghosts[g].dir = 3;
+        if (dirs[ghosts[g].dir] === 0 || randint(0,50) === 0) {
+            var d = -1;
+            while (d === -1) {
+                var rd = randint(0,3);
+                if (dirs[rd] === 1)
+                    d = rd;
+            }
+            //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir], "d=", d);
+            ghosts[g].dir = d;
+        }
+		//animate(ghosts[g], 
+		//pos=(ghosts[g].x + dmoves[ghosts[g].dir][0]*20, ghosts[g].y + dmoves[ghosts[g].dir][1]*20), 
+		//duration=1/SPEED, tween='linear', on_finished=flagMoveGhosts)
+    }
+}
 function handleKeyDown(evt) {
 	if (evt.repeat !== undefined) {
 		if (evt.keyCode !== -1)
@@ -368,24 +310,24 @@ function loadSprite(imageName) {
 }
 function loadAssets() {
 	// load sprites
-	sprites["alien1"] = loadSprite("images/alien1.png");
-	sprites["alien1b"] = loadSprite("images/alien1b.png");
-	sprites["background"] = loadSprite("images/background.png");
-	sprites["base1"] = loadSprite("images/base1.png");
-	sprites["boss"] = loadSprite("images/boss.png");
-	sprites["explosion1"] = loadSprite("images/explosion1.png");
-	sprites["explosion2"] = loadSprite("images/explosion2.png");
-	sprites["explosion3"] = loadSprite("images/explosion3.png");
-	sprites["explosion4"] = loadSprite("images/explosion4.png");
-	sprites["explosion5"] = loadSprite("images/explosion5.png");
-	sprites["laser1"] = loadSprite("images/laser1.png");
-	sprites["laser2"] = loadSprite("images/laser2.png");
-	sprites["life"] = loadSprite("images/life.png");
+	sprites["colourmap"] = loadSprite("images/colourmap.png");
+	sprites["dot"] = loadSprite("images/dot.png");
+	sprites["ghost1"] = loadSprite("images/ghost1.png");
+	sprites["ghost1r"] = loadSprite("images/ghost1r.png");
+	sprites["ghost2"] = loadSprite("images/ghost2.png");
+	sprites["ghost2r"] = loadSprite("images/ghost2r.png");
+	sprites["ghost3"] = loadSprite("images/ghost3.png");
+	sprites["ghost3r"] = loadSprite("images/ghost3r.png");
+	sprites["ghost4"] = loadSprite("images/ghost4.png");
+	sprites["ghost4r"] = loadSprite("images/ghost4r.png");
+	sprites["header"] = loadSprite("images/header.png");
+	sprites["pacman_c"] = loadSprite("images/pacman_c.png");
+	sprites["pacman_cr"] = loadSprite("images/pacman_cr.png");
+	sprites["pacman_o"] = loadSprite("images/pacman_o.png");
+	sprites["pacman_or"] = loadSprite("images/pacman_or.png");
+	sprites["pacmandotmap"] = loadSprite("images/pacmandotmap.png");
+	sprites["pacmanmovemap"] = loadSprite("images/pacmanmovemap.png");
 	sprites["player"] = loadSprite("images/player.png");
-	// load sounds
-	sounds["explosion"] = new Sound("sounds/explosion.ogg");
-	sounds["gun"] = new Sound("sounds/gun.ogg");
-	sounds["laser"] = new Sound("sounds/laser.ogg");
 
 }
 function assetLoadingLoop() {
@@ -396,44 +338,108 @@ function assetLoadingLoop() {
         mainLoop();
     }
 }
-function initAliens() {
-    aliens = [];
-    for (var a=0; a<18; ++a) {
-        aliens.push(new Alien(sprites["alien1"], { x :210+(a % 6)*80, y :100+(Math.floor(a/6)*64) }));
-        aliens[a].status = 0;
-    }
-}
-
-function initBases() {
-	bases = [];
-	bc = 0;
-    for (var b=0; b<3; ++b) {
-    	for (var p=0; p<3; ++p) {
-            bases.push(new Base(sprites["base1"], {x:150+(b*200)+(p*40), y:520}));
-            bases[bc].height = 60;
-            bc +=1;
+function initDots() {
+	pacDots = [];
+	var a = 0;
+    for (var x=0; x<30; ++x) {
+    	for (var y=0; y<29; ++y) {
+    		if (checkDotPoint({ x :10+x*20, y :10+y*20 })) {
+    			pacDots.push(new Dot(sprites["dot"], { x :10+x*20, y :90+y*20 }));
+    			a += 1;
+    		}
     	}
     }
 }
 
+function initGhosts() {
+	moveGhostsFlag = 4;
+	ghosts = [];
+    for (var g=0; g<4; ++g) {
+    		ghosts.push(new Ghost(sprites["ghost"+(g+1)], {x:270+(g*20), y:370}));
+    }
+}
+
+function inputLock() {
+}
+function inputUnLock() {
+    player.movex = 0;
+    player.movey = 0;
+}
+
+function checkInput() {
+	
+	switch (keyDown) {
+	case Keys.left:
+		player.angle = 180;
+		player.movex = -1;
+		break;
+	case Keys.right:
+		player.angle = 0;
+		player.movex = 1;
+		break;
+	case Keys.up:
+		player.angle = 270;
+		player.movey = -1;
+		break;
+	case Keys.down:
+		player.angle = 90;
+		player.movey = 1;
+		break;
+	}
+}
+
+function checkMovePoint(p) {
+    if (p.position.x+p.movex*20 < 0)
+    	p.position.x = p.position.x+600;
+    if (p.position.x+p.movex*20 > 600)
+    	p.position.x = p.position.x-600;
+    //console.log("checkMovePoint=", p.position.x+p.movex*20, p.position.y+p.movey*20-80,
+    //		isImageDataBlack(movemap, p.position.x+p.movex*20, p.position.y+p.movey*20-80));
+    if (!isImageDataBlack(movemap, p.position.x+p.movex*20, p.position.y+p.movey*20-80)) {
+        p.movex = 0;
+        p.movey = 0;
+        playerMoveX = 0;
+        playerMoveY = 0;
+    }
+}
+
+function checkDotPoint(pos) {
+    if (isImageDataBlack(dotmap, pos.x, pos.y)){
+        return true;
+    }
+    return false;
+}
+function getPossibleDirection(g) {
+    if (g.position.x-20 < 0)
+    	g.position.x = g.position.x+600;
+    if (g.position.x+20 > 600)
+        g.position.x = g.position.x-600;
+    var directions = [0,0,0,0];
+    if (g.position.x+20 < 600)
+        if (isImageDataBlack(movemap, g.position.x+20, g.position.y-80))
+        	directions[0] = 1;
+    if (g.position.x < 600 && g.position.x >= 0)
+        if (isImageDataBlack(movemap, g.position.x, g.position.y-60))
+        	directions[1] = 1;
+    if (g.position.x-20 >= 0)
+        if (isImageDataBlack(movemap, g.position.x-20, g.position.y-80))
+        	directions[2] = 1;
+    if (g.position.x < 600 && g.position.x >= 0)
+        if (isImageDataBlack(movemap, g.position.x, g.position.y-100))
+        	directions[3] = 1;
+    return directions;
+}                       
+
 function initialize() {
-	playerSprites = [sprites["player"], sprites["explosion1"], sprites["explosion2"], 
-		sprites["explosion3"], sprites["explosion4"], sprites["explosion5"]];
 	
-	initAliens();
-	initBases();
+	//console.log('dotmap =',dotmap);
+	//console.log('movemap =',movemap);
+	initDots();
+	initGhosts();
 	
-	moveCounter = 0;
-	moveSequence = 0;
-	score = 0;
+	player = new Player(sprites["pacman_o"], { x : 290, y : 570 });
 	
-	lasers = [];
-	moveDelay = 30;
-	player = new Player();
-	player.status = 0;
-	player.laserActive = 1;
-	player.laserCountdown = 0;
-	
+	inputUnLock();
 	// mouse initialize
     //document.onmousedown = handleMouseDown;
     //document.onmouseup = handleMouseUp;
@@ -460,6 +466,7 @@ function mainLoop() {
 function start() {
 	canvas = document.getElementById("gamepan");
 	canvasContext = canvas.getContext("2d");
+
 	loadAssets();
 	assetLoadingLoop();
 }

@@ -5,6 +5,7 @@ const SPEED = 3;
 const MOVE_SPEED = 1;
 const WIDTH = 600
 const HEIGHT = 580
+const LIVES_MAX = 3;
 
 var canvas;
 var canvasContext;
@@ -20,6 +21,7 @@ function Ghost(sprite, pos) {
 	this.sprite = sprite;
 	this.position = pos;
 	this.dir = randint(0,3);
+	this.status = 0;
 	
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.contains = function(p1) {
@@ -65,6 +67,7 @@ function Player(sprite, pos) {
 	this.movex = 0;
 	this.movey = 0;
 	this.angle = 0;
+	this.lives = 3;
 	
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.draw = function () {
@@ -77,6 +80,14 @@ function Player(sprite, pos) {
 
 }
 
+function Life(sprite, pos) {
+	this.sprite = sprite;
+    this.position = pos;
+	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
+	this.draw = function () {
+		drawImage(this.sprite, this.position, 0, ZERO_POS);
+	};
+}
 function Sound(sound) {
 	this.sound = new Audio();
 	this.sound.src = sound;
@@ -95,9 +106,11 @@ var spritesStillLoading = 0;
 var sprites = {};
 var sounds = {};
 
+var level = 0;
 var player;
 var pacDots = [];
 var ghosts = [];
+var lives = [];
 
 var moveDelay = FPS/SPEED;
 var moveCount = 0;
@@ -164,7 +177,13 @@ function draw() {
     
     getPlayerImage();
     player.draw();
+    drawLives();
 
+
+	if (player.status === 0) {
+		drawText('scoreArea', score);
+		drawText('levelArea', "LEVEL " + level);
+	}
 	if (player.status === 1) {
 		drawText('textArea', "GAME OVER");
 	}
@@ -172,6 +191,12 @@ function draw() {
 		drawText('textArea', "YOU WIN!");
 	}
 }
+function drawLives() {
+    for (var l=0; l < player.lives; ++l) {
+    	lives[l].draw();
+    }
+}
+
 function update() {
 	if (player.status === 0) {
 		//console.log("update moveGhostsFlag=", moveGhostsFlag, "moveCount=", moveCount);
@@ -242,10 +267,16 @@ function drawGhosts() {
     for (var g=0; g<ghosts.length; ++g) {
     	//console.log('"ghost"+(g+1)', "ghost"+(g+1));
     	if (ghosts[g].position.x > player.position.x) {
-    		ghosts[g].sprite = sprites["ghost"+(g+1)+"r"];
+            if (ghosts[g].status > 200 || (ghosts[g].status > 1 && ghosts[g].status%2 === 0)) 
+            	ghosts[g].sprite = sprites["ghost5"];
+            else
+            	ghosts[g].sprite = sprites["ghost"+(g+1)+"r"];
     	}
     	else {
-    		ghosts[g].sprite = sprites["ghost"+(g+1)];
+            if (ghosts[g].status > 200 || (ghosts[g].status > 1 && ghosts[g].status%2 === 0)) 
+            	ghosts[g].sprite = sprites["ghost5"];
+            else
+            	ghosts[g].sprite = sprites["ghost"+(g+1)];
     	}
     	ghosts[g].draw();
     }
@@ -256,13 +287,7 @@ function moveGhosts() {
 	moveGhostsFlag = 0;
     for (var g=0; g<ghosts.length; ++g) {
         var dirs = getPossibleDirection(ghosts[g]);
-        //console.log("g=", g, "dirs=", dirs);
-        //console.log("dirs[ghosts[g].dir] =", dirs[ghosts[g].dir]);
-        //console.log("g=",g, " ghostCollided=",ghosts[g].ghostCollided());
-        //console.log("ghosts[g].dir=", ghosts[g].dir, " ghost pos=",ghosts[g].position);
-        if (ghosts[g].ghostCollided() 
-        		&& 280 <= ghosts[g].position.x && ghosts[g].position.x <= 320
-        		&& 340 <= ghosts[g].position.y && ghosts[g].position.y <= 400)
+        if (inTheCentre(ghosts[g]))
         	ghosts[g].dir = 3;
         if (dirs[ghosts[g].dir] === 0 || randint(0,50) === 0) {
             var d = -1;
@@ -279,6 +304,12 @@ function moveGhosts() {
 		//duration=1/SPEED, tween='linear', on_finished=flagMoveGhosts)
     }
 }
+function inTheCentre(ga) {
+    if (ga.position.x > 220 && ga.position.x < 380 && ga.position.y > 320 && ga.position.y < 420)
+        return true;
+    return false;
+}
+
 function handleKeyDown(evt) {
 	if (evt.repeat !== undefined) {
 		if (evt.keyCode !== -1)
@@ -439,7 +470,11 @@ function initialize() {
 	
 	player = new Player(sprites["pacman_o"], { x : 290, y : 570 });
 	
+	for (var i=0; i<LIVES_MAX; ++i) {
+		lives.push(new Life(sprites["pacman_o"], {x: 10+(i*32), y: 40}));
+	}
 	inputUnLock();
+	level += 1;
 	// mouse initialize
     //document.onmousedown = handleMouseDown;
     //document.onmouseup = handleMouseUp;

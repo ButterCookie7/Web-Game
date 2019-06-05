@@ -88,17 +88,24 @@ function Life(sprite, pos) {
 		drawImage(this.sprite, this.position, 0, ZERO_POS);
 	};
 }
-function Sound(sound) {
+function Sound(sound, looping) {
+	this.looping = typeof looping !== 'undefined' ? looping : false;
 	this.sound = new Audio();
 	this.sound.src = sound;
 	this.onplay = false;
 	this.play = function () {
-	    if (this.sound === null || this.onplay) {
-	        return;
-	    }
-    	//console.log("Sound play");
-	    this.sound.load();
-	    this.sound.autoplay = true;
+		if (this.sound === null || this.onplay) {
+			return;
+		}
+		console.log("Sound play ", this.sound.src);
+		this.sound.load();
+		this.sound.autoplay = true;
+		if (this.looping) {
+			this.sound.addEventListener('ended', function () {
+				this.load();
+				this.autoplay = true;
+			}, false);
+		}
 	}
 }
 
@@ -224,9 +231,11 @@ function update() {
 			//if (player.movex !== 0 || player.movey !== 0)
 			//	console.log("checkInput move x,y=", player.movex, player.movey);
 			checkMovePoint(player);
-			//if (player.movex !== 0 || player.movey !== 0)
+			if (player.movex !== 0 || player.movey !== 0) {
 			//console.log("checkMovePoint move x,y=", player.movex, player.movey, 
 			//		"pos=",player.position);
+				sounds["pac1"].play();
+			}
 			moveGhosts();
 		}
 		moveCount +=1;
@@ -360,6 +369,11 @@ function loadAssets() {
 	sprites["pacmanmovemap"] = loadSprite("images/pacmanmovemap.png");
 	sprites["player"] = loadSprite("images/player.png");
 
+	// load sounds
+	sounds["pm1"] = new Sound("music/pm1.ogg", true);
+	sounds["pm1"].sound.volume = 0.5;
+	sounds["pac1"] = new Sound("sounds/pac1.ogg");
+	sounds["pac2"] = new Sound("sounds/pac2.ogg");
 }
 function assetLoadingLoop() {
     if (spritesStillLoading > 0)
@@ -475,6 +489,7 @@ function initialize() {
 	}
 	inputUnLock();
 	level += 1;
+	sounds["pm1"].play();
 	// mouse initialize
     //document.onmousedown = handleMouseDown;
     //document.onmouseup = handleMouseUp;

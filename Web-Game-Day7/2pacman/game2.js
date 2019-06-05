@@ -93,9 +93,8 @@ function Sound(sound, looping) {
 	this.looping = typeof looping !== 'undefined' ? looping : false;
 	this.sound = new Audio();
 	this.sound.src = sound;
-	this.onplay = false;
 	this.play = function () {
-		if (this.sound === null || this.onplay) {
+		if (this.sound === null) {
 			return;
 		}
 		console.log("Sound play ", this.sound.src);
@@ -458,7 +457,7 @@ function loadAssets() {
 	sprites["power"] = loadSprite("images/power.png");
 
 	// load sounds
-	sounds["pm1"] = new Sound("music/pm1.ogg", true);
+	sounds["pm1"] = new Sound("music/pm1.mp3", true);
 	sounds["pm1"].sound.volume = 0.5;
 	sounds["pac1"] = new Sound("sounds/pac1.ogg");
 	sounds["pac2"] = new Sound("sounds/pac2.ogg");

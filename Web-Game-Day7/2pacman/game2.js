@@ -50,6 +50,7 @@ function Dot(sprite, pos) {
 	this.sprite = sprite;
     this.position = pos;
     this.status = 0;
+    this.type = 1;
     
 	this.center = { x : this.sprite.width / 2, y : this.sprite.height / 2 };
 	this.contains = function(p1) {
@@ -160,6 +161,12 @@ function isImageDataBlack(mapArray, x, y) {
 	//console.log('xp, yp=', xp, yp, 'mapArray[yp][xp]=',mapArray[yp][xp], mapArray[yp][xp]==='1');
 	return mapArray[yp][xp]==='1';
 }
+function getDotMapData(x, y) {
+	var xp = Math.floor(x/20);
+	var yp = Math.floor(y/20);
+	//console.log('xp, yp=', xp, yp, 'mapArray[yp][xp]=',mapArray[yp][xp], mapArray[yp][xp]==='1');
+	return parseInt(dotmap[yp][xp]);
+}
 
 function draw() {
 
@@ -175,6 +182,16 @@ function draw() {
             pacDotsLeft += 1;
         }
         if (pacDots[a].contains({ x:player.position.x, y:player.position.y })) {
+            if (pacDots[a].status === 0) {
+                if (pacDots[a].type === 2) {
+                    for (var g=0; g<ghosts.length; ++g){
+                    	ghosts[g].status = 1200;
+                    }
+                }
+                else {
+                    score += 10;
+                }
+            }
             pacDots[a].status = 1;
         }
     }
@@ -187,15 +204,16 @@ function draw() {
     drawLives();
 
 
-	if (player.status === 0) {
-		drawText('scoreArea', score);
-		drawText('levelArea', "LEVEL " + level);
-	}
+	drawText('scoreArea', score);
+	drawText('levelArea', "LEVEL " + level);
 	if (player.status === 1) {
-		drawText('textArea', "GAME OVER");
+		drawText('textArea', "CAUGHT!<br>Press Enter to Continue");
 	}
 	if (player.status === 2) {
-		drawText('textArea', "YOU WIN!");
+		drawText('textArea', "LEVEL CLEARED!<br>Press Enter to Continue");
+	}
+	if (player.status === 3) {
+		drawText('textArea', "GAME OVER");
 	}
 }
 function drawLives() {
@@ -210,9 +228,24 @@ function update() {
 		if (moveCount <= moveDelay) { // every FPS cycle
 			updateGhosts();
 			for (var g=0; g<ghosts.length; ++g) {
+				if (ghosts[g].status > 0)
+					ghosts[g].status -= 1;
 				if (ghosts[g].contains({x:player.position.x, y:player.position.y})) {
-					console.log('GAME OVER g=',g, "x,y=", player.position.x, player.position.y);
-					player.status = 1;
+					if (ghosts[g].status > 0) {
+						score += 100;
+						ghosts[g].position = { x: 290, y: 370 };
+					}
+					else {
+						player.lives -= 1;
+	                    sounds["pac2"].play();
+	                    if (player.lives === 0) {
+	                        player.status = 3;
+	                        //music.fadeout(3);
+	                    }
+	                    else {
+	                        player.status = 1;
+	                    }
+					}
 				}
 			}
 			//animate(player, 
@@ -240,6 +273,18 @@ function update() {
 		}
 		moveCount +=1;
 	}
+    if (player.status === 1) {
+        if (checkInput() === 1) {
+            player.status = 0;
+            player.position.x = 290;
+            player.position.y = 570;
+        }
+    }
+    if (player.status === 2) {
+        if (checkInput() === 1)
+            initialize();
+    }
+	
 }
 var dmoves = [[1,0],[0,1],[-1,0],[0,-1]];
 //             -->    v    <--     ^
@@ -277,7 +322,7 @@ function drawGhosts() {
     	//console.log('"ghost"+(g+1)', "ghost"+(g+1));
     	if (ghosts[g].position.x > player.position.x) {
             if (ghosts[g].status > 200 || (ghosts[g].status > 1 && ghosts[g].status%2 === 0)) 
-            	ghosts[g].sprite = sprites["ghost5"];
+            	ghosts[g].sprite = sprites["ghost5r"];
             else
             	ghosts[g].sprite = sprites["ghost"+(g+1)+"r"];
     	}
@@ -298,6 +343,12 @@ function moveGhosts() {
         var dirs = getPossibleDirection(ghosts[g]);
         if (inTheCentre(ghosts[g]))
         	ghosts[g].dir = 3;
+        else {
+            if (g === 0)
+            	followPlayer(g, dirs);
+            if (g === 1)
+            	ambushPlayer(g, dirs);
+        }
         if (dirs[ghosts[g].dir] === 0 || randint(0,50) === 0) {
             var d = -1;
             while (d === -1) {
@@ -313,8 +364,42 @@ function moveGhosts() {
 		//duration=1/SPEED, tween='linear', on_finished=flagMoveGhosts)
     }
 }
+function followPlayer(g, dirs) {
+    var d = ghosts[g].dir;
+    if (d === 1 || d === 3) {
+        if (player.position.x > ghosts[g].position.x && dirs[0] === 1)
+        	ghosts[g].dir = 0;
+        if (player.position.x < ghosts[g].position.x && dirs[2] === 1)
+        	ghosts[g].dir = 2;
+    }
+    if (d === 0 || d === 2) {
+        if (player.position.y > ghosts[g].position.y && dirs[1] == 1 && !aboveCentre(ghosts[g]))
+        	ghosts[g].dir = 1;
+        if (player.position.y < ghosts[g].position.y && dirs[3] == 1)
+        	ghosts[g].dir = 3;
+    }
+}
+
+function ambushPlayer(g, dirs) {
+    var d = ghosts[g].dir
+    if (player.movex > 0 && dirs[0] === 1)
+    	ghosts[g].dir = 0;
+    if (player.movex < 0 && dirs[2] === 1)
+    	ghosts[g].dir = 2;
+
+    if (player.movey > 0 && dirs[1] == 1 && !aboveCentre(ghosts[g]))
+    	ghosts[g].dir = 1;
+    if (player.movey < 0 && dirs[3] == 1)
+    	ghosts[g].dir = 3;
+}
+
 function inTheCentre(ga) {
     if (ga.position.x > 220 && ga.position.x < 380 && ga.position.y > 320 && ga.position.y < 420)
+        return true;
+    return false;
+}
+function aboveCentre(ga) {
+    if (ga.x > 220 && ga.x < 380 && ga.y > 300 && ga.y < 320)
         return true;
     return false;
 }
@@ -360,6 +445,8 @@ function loadAssets() {
 	sprites["ghost3r"] = loadSprite("images/ghost3r.png");
 	sprites["ghost4"] = loadSprite("images/ghost4.png");
 	sprites["ghost4r"] = loadSprite("images/ghost4r.png");
+	sprites["ghost5"] = loadSprite("images/ghost5.png");
+	sprites["ghost5r"] = loadSprite("images/ghost5r.png");
 	sprites["header"] = loadSprite("images/header.png");
 	sprites["pacman_c"] = loadSprite("images/pacman_c.png");
 	sprites["pacman_cr"] = loadSprite("images/pacman_cr.png");
@@ -368,6 +455,7 @@ function loadAssets() {
 	sprites["pacmandotmap"] = loadSprite("images/pacmandotmap.png");
 	sprites["pacmanmovemap"] = loadSprite("images/pacmanmovemap.png");
 	sprites["player"] = loadSprite("images/player.png");
+	sprites["power"] = loadSprite("images/power.png");
 
 	// load sounds
 	sounds["pm1"] = new Sound("music/pm1.ogg", true);
@@ -385,12 +473,19 @@ function assetLoadingLoop() {
 }
 function initDots() {
 	pacDots = [];
-	var a = 0;
     for (var x=0; x<30; ++x) {
     	for (var y=0; y<29; ++y) {
-    		if (checkDotPoint({ x :10+x*20, y :10+y*20 })) {
-    			pacDots.push(new Dot(sprites["dot"], { x :10+x*20, y :90+y*20 }));
-    			a += 1;
+    		var d = checkDotPoint({ x :10+x*20, y :10+y*20 });
+    		var dot;
+    		if (d === 1) {
+    			dot = new Dot(sprites["dot"], { x :10+x*20, y :90+y*20 });
+    			dot.type = 1;
+    			pacDots.push(dot);
+    		}
+    		else if (d === 2) {
+    			dot = new Dot(sprites["power"], { x :10+x*20, y :90+y*20 });
+    			dot.type = 2;
+    			pacDots.push(dot);
     		}
     	}
     }
@@ -412,25 +507,33 @@ function inputUnLock() {
 }
 
 function checkInput() {
-	
-	switch (keyDown) {
-	case Keys.left:
-		player.angle = 180;
-		player.movex = -1;
-		break;
-	case Keys.right:
-		player.angle = 0;
-		player.movex = 1;
-		break;
-	case Keys.up:
-		player.angle = 270;
-		player.movey = -1;
-		break;
-	case Keys.down:
-		player.angle = 90;
-		player.movey = 1;
-		break;
+
+	if (player.status === 0) {
+		switch (keyDown) {
+		case Keys.left:
+			player.angle = 180;
+			player.movex = -1;
+			break;
+		case Keys.right:
+			player.angle = 0;
+			player.movex = 1;
+			break;
+		case Keys.up:
+			player.angle = 270;
+			player.movey = -1;
+			break;
+		case Keys.down:
+			player.angle = 90;
+			player.movey = 1;
+			break;
+		}
 	}
+	else if (player.status === 1 || player.status === 2) {
+		if (keyDown === Keys.enter) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 function checkMovePoint(p) {
@@ -449,10 +552,7 @@ function checkMovePoint(p) {
 }
 
 function checkDotPoint(pos) {
-    if (isImageDataBlack(dotmap, pos.x, pos.y)){
-        return true;
-    }
-    return false;
+    return getDotMapData(pos.x, pos.y);
 }
 function getPossibleDirection(g) {
     if (g.position.x-20 < 0)

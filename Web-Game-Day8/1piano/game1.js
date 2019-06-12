@@ -1,8 +1,4 @@
 
-const ZERO_POS = { x : 0, y : 0 };
-const FPS = 60;
-const SPEED = 3;
-const MOVE_SPEED = 1;
 const WIDTH = 900
 const HEIGHT = 400
 
